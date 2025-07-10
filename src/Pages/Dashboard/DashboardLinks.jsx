@@ -16,7 +16,6 @@ import useUserRole from "../../Hooks/useUserRole";
 
 const DashboardLinks = () => {
   const {role, loading} = useUserRole();
-  console.log(role);
 
   if (loading) return <p className="text-center text-gray-500">Loading...</p>;
 

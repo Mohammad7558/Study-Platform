@@ -7,6 +7,8 @@ import { FcGoogle } from "react-icons/fc";
 import { GoogleAuthProvider } from "firebase/auth";
 import useAxios from "../../Hooks/useAxios";
 
+// document title
+
 const Register = () => {
   const { createUserWithEmail, updateUser, setUser, createUserWithGoogle } = useAuth();
   const navigate = useNavigate();

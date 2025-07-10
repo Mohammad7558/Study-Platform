@@ -32,8 +32,11 @@ const Header = () => {
             <Link to="/about" className="hover:text-cyan-400 transition">
               About
             </Link>
-            <Link to="/contact" className="hover:text-cyan-400 transition">
-              Contact
+            <Link to="/all-session" className="hover:text-cyan-400 transition">
+              All Sessions
+            </Link>
+            <Link to="/tutors" className="hover:text-cyan-400 transition">
+              Tutors
             </Link>
 
             {user ? (

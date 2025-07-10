@@ -14,6 +14,10 @@ import StudentRoutes from "./StudentRoutes";
 import BookedSession from "../Pages/StudentPages/BookedSession";
 import AdminRoutes from "./AdminRoutes";
 import AllUsers from "../Pages/AdminPages/AllUsers";
+import Sessions from "../Pages/StudySessions/Sessions";
+import AllTutors from "../Pages/AllTutors/AllTutors";
+import About from "../Pages/About/About";
+import DetailedSessionPage from "../Components/HomePageComponents/DetailedSessionPage";
 
 export const router = createBrowserRouter([
     {
@@ -26,6 +30,10 @@ export const router = createBrowserRouter([
                element: <Home/>
             },
             {
+                path: '/about',
+                element: <About/>
+            },
+            {
                 path: '/register',
                 element: <Register/>
             },
@@ -36,6 +44,18 @@ export const router = createBrowserRouter([
             {
                 path: '/forbidden',
                 element: <Forbidden/>
+            },
+            {
+                path: '/all-session',
+                element: <Sessions/>
+            },
+            {
+                path: '/tutors',
+                element: <AllTutors/>
+            },
+            {
+                path: '/session/:id',
+                element: <PrivateRouters><DetailedSessionPage/></PrivateRouters>
             }
         ]
     },
