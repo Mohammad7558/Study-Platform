@@ -21,65 +21,59 @@ const Register = () => {
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const { email, password, name, photoUrl } = data;
 
-    createUserWithEmail(email, password)
-      .then(async(res) => {
-        const user = res.user;
-        updateUser({ displayName: name, photoURL: photoUrl })
-          .then(() => {
-            setUser({ ...user, displayName: name, photoURL: photoUrl });
-            toast.success("User Created Successfully");
-            navigate(from, { replace: true });
-          })
-          .catch((error) => toast.error(error.message));
+    try {
+      const res = await createUserWithEmail(email, password);
+      const user = res.user;
 
-          // setUser to DB
-          const userInfo = {
-            name,
-            photoUrl,
-            email,
-            role: 'Student',
-            created_at: new Date().toISOString()
-          }
+      await updateUser({ displayName: name, photoURL: photoUrl });
+      setUser({ ...user, displayName: name, photoURL: photoUrl });
 
-          await axiosInstance.post('/users', userInfo)
+      const userInfo = {
+        name,
+        email,
+        photoUrl,
+        role: "student",
+        created_at: new Date().toISOString(),
+      };
 
-      })
-      .catch((error) => {
-        toast.error(error.message);
-        console.error(error);
-      });
+      await axiosInstance.post("/users", userInfo);
+      toast.success("User registered successfully");
+      navigate(from, { replace: true });
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error(error.message);
+    }
   };
 
-  const makeUserWithGoogle = () => {
-    createUserWithGoogle(provider)
-      .then(async(result) => {
-        const user = result.user;
-        console.log(user);
-        const userInfo = {
-            name: user.displayName,
-            photoUrl: user.photoURL,
-            email: user.email,
-            role: 'Student',
-            created_at: new Date().toISOString()
-          }
+  const makeUserWithGoogle = async () => {
+    try {
+      const result = await createUserWithGoogle(provider);
+      const user = result.user;
 
-          const res = await axiosInstance.post('/users', userInfo);
-          console.log(res.data);
-        navigate(from, { replace: true });
-        toast.success("User created successfully");
-      })
-      .catch((error) => {
-        toast.error(error.message);
-      });
+      const userInfo = {
+        name: user.displayName,
+        email: user.email,
+        photoUrl: user.photoURL,
+        role: "student",
+        created_at: new Date().toISOString(),
+      };
+
+      await axiosInstance.post("/users", userInfo);
+      toast.success("User registered with Google");
+      navigate(from, { replace: true });
+    } catch (error) {
+      console.error("Google signup error:", error);
+      toast.error(error.message);
+    }
   };
 
   return (
     <div className="flex justify-center items-center lg:min-h-screen min-h-[80vh] bg-gradient-to-br px-4 py-10 lg:py-0">
       <div className="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden grid md:grid-cols-2">
-        {/* Placeholder image */}
+        {/* Image Section */}
         <div className="hidden md:block bg-cyan-600">
           <img
             src="https://source.unsplash.com/600x600/?technology,abstract"
@@ -128,9 +122,7 @@ const Register = () => {
               className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
+              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
             )}
           </div>
 
@@ -152,9 +144,7 @@ const Register = () => {
               className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password.message}
-              </p>
+              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}
           </div>
 
@@ -170,9 +160,7 @@ const Register = () => {
               className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
             />
             {errors.photoUrl && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.photoUrl.message}
-              </p>
+              <p className="text-red-500 text-sm mt-1">{errors.photoUrl.message}</p>
             )}
           </div>
 
