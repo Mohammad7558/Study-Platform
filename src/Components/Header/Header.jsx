@@ -38,6 +38,7 @@ const Header = () => {
 
             {user ? (
               <>
+              <Link to='/dashboard'>Dashboard</Link>
                 <div className="flex items-center gap-3 ml-4">
                   {user.photoURL && (
                     <img
@@ -91,6 +92,7 @@ const Header = () => {
 
       {/* Mobile Nav */}
       {isOpen && (
+        
         <div className="md:hidden px-4 pb-4 space-y-2">
           <Link
             to="/"
@@ -113,6 +115,7 @@ const Header = () => {
           >
             Contact
           </Link>
+          <Link to='/dashboard'>Dashboard</Link>
 
           {user ? (
             <>

@@ -3,8 +3,9 @@ import { useForm } from "react-hook-form";
 import useAuth from "../../Hooks/useAuth";
 import toast from "react-hot-toast";
 import { Link, useLocation, useNavigate } from "react-router";
-import { GoogleAuthProvider } from "firebase/auth/web-extension";
 import { FcGoogle } from "react-icons/fc";
+import { GoogleAuthProvider } from "firebase/auth";
+import useAxios from "../../Hooks/useAxios";
 
 const Register = () => {
   const { createUserWithEmail, updateUser, setUser, createUserWithGoogle } = useAuth();
@@ -12,6 +13,7 @@ const Register = () => {
   const location = useLocation();
   const from = location?.state?.from?.pathname || "/";
   const provider = new GoogleAuthProvider();
+  const axiosInstance = useAxios();
 
   const {
     register,
@@ -23,7 +25,7 @@ const Register = () => {
     const { email, password, name, photoUrl } = data;
 
     createUserWithEmail(email, password)
-      .then((res) => {
+      .then(async(res) => {
         const user = res.user;
         updateUser({ displayName: name, photoURL: photoUrl })
           .then(() => {
@@ -32,6 +34,18 @@ const Register = () => {
             navigate(from, { replace: true });
           })
           .catch((error) => toast.error(error.message));
+
+          // setUser to DB
+          const userInfo = {
+            name,
+            photoUrl,
+            email,
+            role: 'Student',
+            created_at: new Date().toISOString()
+          }
+
+          await axiosInstance.post('/users', userInfo)
+
       })
       .catch((error) => {
         toast.error(error.message);
@@ -41,8 +55,19 @@ const Register = () => {
 
   const makeUserWithGoogle = () => {
     createUserWithGoogle(provider)
-      .then((result) => {
+      .then(async(result) => {
         const user = result.user;
+        console.log(user);
+        const userInfo = {
+            name: user.displayName,
+            photoUrl: user.photoURL,
+            email: user.email,
+            role: 'Student',
+            created_at: new Date().toISOString()
+          }
+
+          const res = await axiosInstance.post('/users', userInfo);
+          console.log(res.data);
         navigate(from, { replace: true });
         toast.success("User created successfully");
       })
