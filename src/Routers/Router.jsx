@@ -18,6 +18,9 @@ import Sessions from "../Pages/StudySessions/Sessions";
 import AllTutors from "../Pages/AllTutors/AllTutors";
 import About from "../Pages/About/About";
 import DetailedSessionPage from "../Components/HomePageComponents/DetailedSessionPage";
+import MySessions from "../Pages/TutorPages/MySessions";
+import UploadMaterial from "../Pages/TutorPages/UploadMaterial";
+import ViewMaterials from "../Pages/TutorPages/ViewMaterials";
 
 export const router = createBrowserRouter([
     {
@@ -71,6 +74,18 @@ export const router = createBrowserRouter([
             {
                 path: '/dashboard/create-session',
                 element: <TutorRoutes><CreateSession/></TutorRoutes>
+            },
+            {
+                path: '/dashboard/my-session',
+                element: <TutorRoutes><MySessions/></TutorRoutes>
+            },
+            {
+                path: '/dashboard/upload-materials',
+                element: <TutorRoutes><UploadMaterial/></TutorRoutes>
+            },
+            {
+                path: '/dashboard/view-materials',
+                element: <TutorRoutes><ViewMaterials/></TutorRoutes>
             },
             //---------- student Protected Routes------------//
             {

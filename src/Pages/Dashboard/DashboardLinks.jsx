@@ -35,7 +35,7 @@ const DashboardLinks = () => {
       {role === "tutor" && (
         <>
           <NavLink to="/dashboard/create-session" className={linkStyle}><FaPlus /> Create Session</NavLink>
-          <NavLink to="/dashboard/my-sessions" className={linkStyle}><FaBookOpen /> My Sessions</NavLink>
+          <NavLink to="/dashboard/my-session" className={linkStyle}><FaBookOpen /> My Sessions</NavLink>
           <NavLink to="/dashboard/upload-materials" className={linkStyle}><FaFileUpload /> Upload Materials</NavLink>
           <NavLink to="/dashboard/view-materials" className={linkStyle}><FaFolderOpen /> View Materials</NavLink>
           <NavLink to="/dashboard/rejected-feedback" className={linkStyle}><FaTimesCircle /> Rejected Feedback</NavLink>
