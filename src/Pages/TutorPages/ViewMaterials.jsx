@@ -11,16 +11,14 @@ const ViewMaterials = () => {
   const [editMaterialId, setEditMaterialId] = useState(null);
   const [editData, setEditData] = useState({ title: "", image: "", link: "" });
 
-  // Fetch materials using tanstack query
   const {
     data: materials = [],
     isLoading,
     refetch,
   } = useQuery({
     queryKey: ["materials", user?.email],
-    enabled: !!user?.email, // wait until user.email is ready
+    enabled: !!user?.email,
     queryFn: async () => {
-      // Backend API should filter materials by user's booked sessions based on email
       const res = await axiosSecure.get(`/materials?email=${user.email}`);
       return res.data;
     },

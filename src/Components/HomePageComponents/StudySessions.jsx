@@ -1,13 +1,15 @@
+// StudySessions.jsx
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import SingleStudySession from './SingleStudySession';
+import useAxiosSecure from '../../Hooks/useAxiosSecure';
 
 const StudySessions = () => {
+  const axiosSecure = useAxiosSecure();
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['homeSessions'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:5000/sessions');
+      const res = await axiosSecure.get('/approved');
       return res.data;
     },
   });

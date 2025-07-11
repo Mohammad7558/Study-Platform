@@ -21,6 +21,10 @@ import DetailedSessionPage from "../Components/HomePageComponents/DetailedSessio
 import MySessions from "../Pages/TutorPages/MySessions";
 import UploadMaterial from "../Pages/TutorPages/UploadMaterial";
 import ViewMaterials from "../Pages/TutorPages/ViewMaterials";
+import CreateNotes from "../Pages/StudentPages/CreateNotes";
+import ManagePersonalNotes from "../Pages/StudentPages/ManagePersonalNotes";
+import ViewAllStudyMet from "../Pages/StudentPages/ViewAllStudyMet";
+import DetailedBookedCard from "../Pages/StudentPages/DetailedBookedCard";
 
 export const router = createBrowserRouter([
     {
@@ -59,7 +63,7 @@ export const router = createBrowserRouter([
             {
                 path: '/session/:id',
                 element: <PrivateRouters><DetailedSessionPage/></PrivateRouters>
-            }
+            },
         ]
     },
     {
@@ -91,6 +95,22 @@ export const router = createBrowserRouter([
             {
                 path: '/dashboard/booked-sessions',
                 element: <StudentRoutes><BookedSession/></StudentRoutes>
+            },
+            {
+                path: '/dashboard/create-note',
+                element: <StudentRoutes><CreateNotes/></StudentRoutes>
+            },
+            {
+                path: '/dashboard/manage-notes',
+                element: <StudentRoutes><ManagePersonalNotes/></StudentRoutes>
+            },
+            {
+                path: '/dashboard/all-study-met',
+                element: <StudentRoutes><ViewAllStudyMet/></StudentRoutes>
+            },
+            {
+                path: '/dashboard/booked-sessions/:id',
+                element: <StudentRoutes><DetailedBookedCard/></StudentRoutes>
             },
             //---------- admin Protected Routes------------//
             {

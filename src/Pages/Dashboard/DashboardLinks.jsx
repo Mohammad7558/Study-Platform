@@ -28,6 +28,8 @@ const DashboardLinks = () => {
         <>
           <NavLink to="/dashboard/booked-sessions" className={linkStyle}><FaClipboardList /> Booked Sessions</NavLink>
           <NavLink to="/dashboard/create-note" className={linkStyle}><FaStickyNote /> Create Note</NavLink>
+          <NavLink to="/dashboard/manage-notes" className={linkStyle}><FaStickyNote /> Manage Note</NavLink>
+          <NavLink to="/dashboard/all-study-met" className={linkStyle}><FaStickyNote />View Materials</NavLink>
         </>
       )}
 
