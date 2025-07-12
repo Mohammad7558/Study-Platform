@@ -27,6 +27,7 @@ import ViewAllStudyMet from "../Pages/StudentPages/ViewAllStudyMet";
 import DetailedBookedCard from "../Pages/StudentPages/DetailedBookedCard";
 import AllSessions from "../Pages/AdminPages/AllSessions";
 import ViewAllMaterials from "../Pages/AdminPages/ViewAllMaterials";
+import ViewRejectedFeedBacks from "../Pages/TutorPages/ViewRejectedFeedBacks";
 
 export const router = createBrowserRouter([
     {
@@ -88,6 +89,10 @@ export const router = createBrowserRouter([
             {
                 path: '/dashboard/upload-materials',
                 element: <TutorRoutes><UploadMaterial/></TutorRoutes>
+            },
+            {
+                path: '/dashboard/rejected-feedback',
+                element: <TutorRoutes><ViewRejectedFeedBacks/></TutorRoutes>
             },
             {
                 path: '/dashboard/view-materials',

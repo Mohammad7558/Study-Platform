@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { 
+  ClockIcon, 
+  CalendarIcon, 
+  UserIcon, 
+  CheckIcon, 
+  XMarkIcon 
+} from "@heroicons/react/24/outline";
 import useUserRole from "../../Hooks/useUserRole";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
 import useAuth from "../../Hooks/useAuth";
@@ -48,14 +55,19 @@ const DetailedSessionPage = () => {
     checkAlreadyBooked();
   }, [user?.email, id, axiosSecure]);
 
-  if (isLoading || isRoleLoading)
-    return <p className="text-center mt-10">Loading...</p>;
-  if (!session) return <p className="text-center mt-10">No session found</p>;
+  if (isLoading || isRoleLoading) {
+    return <div className="text-center mt-10">Loading session details...</div>;
+  }
+
+  if (!session) {
+    return <div className="text-center mt-10">Session not found</div>;
+  }
 
   const {
     _id,
     title,
     tutorName,
+    tutorEmail,
     description,
     registrationStartDate,
     registrationEndDate,
@@ -63,170 +75,199 @@ const DetailedSessionPage = () => {
     classEndDate,
     duration,
     registrationFee,
+    sessionType,
+    price
   } = session;
 
+  // Date calculations
   const now = new Date();
   const regStart = new Date(registrationStartDate);
   const regEnd = new Date(registrationEndDate);
-  const isOngoing = regStart <= now && now <= regEnd;
+  const clsStart = new Date(classStartDate);
+  const clsEnd = new Date(classEndDate);
 
-  const canBook =
-    isOngoing && role === "student" && !isAlreadyBooked && user?.email;
+  // Determine session status
+  let currentStatus = "";
+  let statusColor = "";
+  let statusIcon = null;
 
-  const handleBooking = async (bookedSession) => {
-    const { _id, ...rest } = bookedSession;
-    const bookedData = {
-      ...rest,
-      sessionId: _id,
-      studentName: user?.displayName,
-      studentEmail: user?.email,
-      studentPhotoUrl: user?.photoURL,
-    };
+  if (now < regStart) {
+    currentStatus = "Upcoming";
+    statusColor = "bg-blue-100 text-blue-800";
+    statusIcon = <ClockIcon className="h-5 w-5 text-blue-500" />;
+  } else if (now >= regStart && now <= regEnd) {
+    currentStatus = "Registration Open";
+    statusColor = "bg-green-100 text-green-800";
+    statusIcon = <CheckIcon className="h-5 w-5 text-green-500" />;
+  } else if (now > regEnd && now < clsStart) {
+    currentStatus = "Registration Closed";
+    statusColor = "bg-yellow-100 text-yellow-800";
+    statusIcon = <XMarkIcon className="h-5 w-5 text-yellow-500" />;
+  } else if (now >= clsStart && now <= clsEnd) {
+    currentStatus = "In Progress";
+    statusColor = "bg-purple-100 text-purple-800";
+    statusIcon = <ClockIcon className="h-5 w-5 text-purple-500" />;
+  } else {
+    currentStatus = "Completed";
+    statusColor = "bg-gray-100 text-gray-800";
+    statusIcon = <CheckIcon className="h-5 w-5 text-gray-500" />;
+  }
 
+  const canBook = (
+    now >= regStart && 
+    now <= regEnd && 
+    role === "student" && 
+    !isAlreadyBooked && 
+    user?.email
+  );
+
+  const handleBooking = async () => {
     try {
+      const bookedData = {
+        sessionId: _id,
+        title,
+        tutorName,
+        tutorEmail,
+        studentName: user.displayName,
+        studentEmail: user.email,
+        studentPhotoUrl: user.photoURL,
+        registrationDate: new Date().toISOString(),
+        status: "registered",
+        sessionType,
+        price
+      };
+
       const res = await axiosSecure.post("/booked-sessions", bookedData);
 
       if (res.status === 409) {
-        Swal.fire({
-          icon: "info",
-          title: "Already Booked",
-          text: "You have already booked this session.",
-        });
+        Swal.fire("Already Booked", "You've already booked this session", "info");
         return;
       }
 
       if (res.data.insertedId) {
-        Swal.fire({
-          icon: "success",
-          title: "Session Booked!",
-          text: "You have successfully booked the session.",
-        });
+        Swal.fire("Success", "Session booked successfully!", "success");
         setIsAlreadyBooked(true);
       }
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Booking Failed",
-        text: error?.response?.data?.message || error.message,
-      });
+      Swal.fire("Error", error.response?.data?.message || "Booking failed", "error");
     }
   };
 
-  // ⭐ Average rating calculation
-  const averageRating =
-    reviews.length > 0
-      ? (
-          reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
-        ).toFixed(1)
-      : null;
+  // Calculate average rating
+  const averageRating = reviews.length > 0 
+    ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length
+    : 0;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
-      <h1 className="text-2xl font-bold mb-2">{title}</h1>
-      <p className="text-gray-700 mb-2">
-        Tutor: <strong>{tutorName}</strong>
-      </p>
-      <p className="mb-4 text-sm text-gray-500">{description}</p>
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
+        <div className="flex items-center text-gray-600 mb-4">
+          <UserIcon className="h-5 w-5 mr-1" />
+          <span>Tutor: {tutorName} ({tutorEmail})</span>
+        </div>
+        
+        <p className="text-gray-700 mb-6">{description}</p>
 
-      <div className="space-y-2">
-        <p>
-          Registration: {registrationStartDate} → {registrationEndDate}
-        </p>
-        <p>
-          Class: {classStartDate} → {classEndDate}
-        </p>
-        <p>Duration: {duration}</p>
-        <p>Fee: {registrationFee === 0 ? "Free" : `$${registrationFee}`}</p>
-        <p>
-          Status:{" "}
-          <span className={isOngoing ? "text-green-600" : "text-red-500"}>
-            {isOngoing ? "Ongoing" : "Closed"}
-          </span>
-        </p>
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold mb-3 flex items-center">
+              <CalendarIcon className="h-5 w-5 mr-2 text-gray-500" />
+              Registration Period
+            </h3>
+            <p>Start: {new Date(registrationStartDate).toLocaleDateString()}</p>
+            <p>End: {new Date(registrationEndDate).toLocaleDateString()}</p>
+          </div>
 
-      <button
-        onClick={() => handleBooking(session)}
-        disabled={!canBook}
-        className={`mt-6 px-4 py-2 text-white rounded ${
-          canBook
-            ? "bg-green-600 hover:bg-green-700"
-            : "bg-gray-400 cursor-not-allowed"
-        }`}
-        title={
-          isAlreadyBooked
-            ? "You have already booked this session"
-            : !isOngoing
-            ? "Registration closed"
-            : role !== "student"
-            ? "Only students can book"
-            : "Login required"
-        }
-      >
-        {isAlreadyBooked
-          ? "Already Booked"
-          : canBook
-          ? "Book Now"
-          : !isOngoing
-          ? "Registration Closed"
-          : "Book Now (Disabled)"}
-      </button>
-
-      {/* 🔥 Reviews Section */}
-      <div className="mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Reviews</h2>
-          {averageRating && (
-            <div className="text-yellow-600 font-medium text-sm flex items-center space-x-2">
-              <span>⭐ Average Rating:</span>
-              <span className="text-black font-bold">{averageRating}</span>
-              <span className="text-gray-500">/ 5 ({reviews.length} review{reviews.length > 1 ? "s" : ""})</span>
-            </div>
-          )}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold mb-3 flex items-center">
+              <CalendarIcon className="h-5 w-5 mr-2 text-gray-500" />
+              Class Period
+            </h3>
+            <p>Start: {new Date(classStartDate).toLocaleDateString()}</p>
+            <p>End: {new Date(classEndDate).toLocaleDateString()}</p>
+          </div>
         </div>
 
-        {/* Reviews List */}
-        <div className="space-y-6">
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <div key={review._id} className="border-b pb-4">
-                <div className="flex items-start space-x-3">
-                  <img
-                    src={
-                      review.studentPhotoUrl ||
-                      "https://i.ibb.co/M1q7YVw/default-user.png"
-                    }
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor} flex items-center`}>
+            {statusIcon}
+            <span className="ml-1">{currentStatus}</span>
+          </div>
+          <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+            Duration: {duration}
+          </div>
+          <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+            Fee: {registrationFee === 0 ? "Free" : `$${registrationFee}`}
+          </div>
+        </div>
+
+        <button
+          onClick={handleBooking}
+          disabled={!canBook}
+          className={`px-6 py-3 rounded-md font-medium ${
+            canBook
+              ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+              : "bg-gray-300 text-gray-600 cursor-not-allowed"
+          }`}
+        >
+          {isAlreadyBooked
+            ? "Already Booked"
+            : canBook
+            ? "Book Now"
+            : "Registration Closed"}
+        </button>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mt-8 border-t pt-6">
+        <h2 className="text-2xl font-bold mb-4">Reviews</h2>
+        
+        {reviews.length > 0 ? (
+          <div className="space-y-4">
+            <div className="flex items-center mb-4">
+              <div className="text-3xl font-bold mr-2">{averageRating.toFixed(1)}</div>
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <span key={`avg-star-${i}`} className="text-yellow-400">
+                    {i < Math.round(averageRating) ? "★" : "☆"}
+                  </span>
+                ))}
+              </div>
+              <span className="text-gray-500 ml-2">({reviews.length} reviews)</span>
+            </div>
+
+            {reviews.map((review) => (
+              <div key={`review-${review._id}`} className="border-b pb-4 last:border-0">
+                <div className="flex items-start gap-3">
+                  <img 
+                    src={review.studentPhotoUrl || "https://i.ibb.co/M1q7YVw/default-user.png"} 
                     alt={review.studentName}
                     className="w-10 h-10 rounded-full object-cover"
                   />
                   <div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2">
                       <h4 className="font-medium">{review.studentName}</h4>
-                      <div className="flex items-center text-yellow-500">
+                      <div className="flex text-yellow-400">
                         {[...Array(5)].map((_, i) => (
-                          <span key={i}>
+                          <span key={`review-${review._id}-star-${i}`}>
                             {i < review.rating ? "★" : "☆"}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {review.reviewText}
+                    <p className="text-gray-600 mt-1">{review.reviewText}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(review.createdAt).toLocaleDateString()}
                     </p>
-                    {review.updatedAt && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Last updated:{" "}
-                        {new Date(review.updatedAt).toLocaleString()}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500">No reviews yet.</p>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500">No reviews yet.</p>
+        )}
       </div>
     </div>
   );
