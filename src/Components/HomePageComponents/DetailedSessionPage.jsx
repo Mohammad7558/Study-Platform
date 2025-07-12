@@ -13,11 +13,23 @@ const DetailedSessionPage = () => {
   const axiosSecure = useAxiosSecure();
   const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
 
-  // Review states
-  const [reviewText, setReviewText] = useState("");
-  const [rating, setRating] = useState(5);
-  const [editingReviewId, setEditingReviewId] = useState(null);
-  const [userReview, setUserReview] = useState(null);
+  // Get single session data
+  const { data: session, isLoading } = useQuery({
+    queryKey: ["sessionDetails", id],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/session/${id}`);
+      return res.data;
+    },
+  });
+
+  // Get reviews for this session
+  const { data: reviews } = useQuery({
+    queryKey: ["sessionReviews", id],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/reviews?sessionId=${id}`);
+      return res.data;
+    },
+  });
 
   // Check if user already booked this session
   useEffect(() => {
@@ -35,39 +47,6 @@ const DetailedSessionPage = () => {
     };
     checkAlreadyBooked();
   }, [user?.email, id, axiosSecure]);
-
-  // Get single session data
-  const { data: session, isLoading } = useQuery({
-    queryKey: ["sessionDetails", id],
-    queryFn: async () => {
-      const res = await axiosSecure.get(`/session/${id}`);
-      return res.data;
-    },
-  });
-
-  // Get reviews for this session
-  const { data: reviews, refetch: refetchReviews } = useQuery({
-    queryKey: ["sessionReviews", id],
-    queryFn: async () => {
-      const res = await axiosSecure.get(`/reviews?sessionId=${id}`);
-      return res.data;
-    },
-  });
-
-  // Check if user has already reviewed this session
-  useEffect(() => {
-    if (user?.email && reviews) {
-      const userRev = reviews.find((review) => review.studentEmail === user.email);
-      setUserReview(userRev);
-      if (userRev) {
-        setReviewText(userRev.reviewText);
-        setRating(userRev.rating);
-      } else {
-        setReviewText("");
-        setRating(5);
-      }
-    }
-  }, [user?.email, reviews]);
 
   if (isLoading || isRoleLoading)
     return <p className="text-center mt-10">Loading...</p>;
@@ -132,74 +111,6 @@ const DetailedSessionPage = () => {
     }
   };
 
-  // Review form submit handler
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!userReview && !user?.email) {
-      Swal.fire({
-        icon: "error",
-        title: "Login Required",
-        text: "You need to login to submit a review.",
-      });
-      return;
-    }
-
-    const reviewData = {
-      rating,
-      reviewText,
-      sessionId: session._id,
-      studentName: user?.displayName,
-      studentEmail: user?.email,
-      studentPhotoUrl: user?.photoURL,
-    };
-
-    try {
-      let result;
-      if (userReview) {
-        // Update existing review
-        result = await axiosSecure.patch(`/reviews/${userReview._id}`, reviewData);
-      } else {
-        // Create new review
-        result = await axiosSecure.post("/reviews", reviewData);
-      }
-
-      if (result.data.success) {
-        Swal.fire({
-          icon: "success",
-          title: userReview ? "Review Updated!" : "Review Submitted!",
-          text: userReview 
-            ? "Your review has been updated." 
-            : "Thank you for your feedback.",
-          timer: 2000,
-          showConfirmButton: false,
-        });
-        refetchReviews();
-      } else {
-        throw new Error("Failed to submit review.");
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Submission Failed",
-        text:
-          error?.response?.data?.message ||
-          error.message ||
-          "Something went wrong!",
-      });
-    }
-  };
-
-  const handleCancelEdit = () => {
-    if (userReview) {
-      setReviewText(userReview.reviewText);
-      setRating(userReview.rating);
-    } else {
-      setReviewText("");
-      setRating(5);
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
       <h1 className="text-2xl font-bold mb-2">{title}</h1>
@@ -252,73 +163,10 @@ const DetailedSessionPage = () => {
           : "Book Now (Disabled)"}
       </button>
 
-      {/* Review Section */}
+      {/* Reviews Section */}
       <div className="mt-10">
         <h2 className="text-xl font-semibold mb-4">Reviews</h2>
         
-        {/* Review Form */}
-        {user?.email && (
-          <form
-            onSubmit={handleReviewSubmit}
-            className="mb-8 max-w-md border p-4 rounded space-y-4"
-          >
-            <h3 className="text-lg font-medium">
-              {userReview ? "Edit Your Review" : "Write a Review"}
-            </h3>
-
-            <div>
-              <label className="block mb-1 font-medium" htmlFor="rating">
-                Rating
-              </label>
-              <select
-                id="rating"
-                value={rating}
-                onChange={(e) => setRating(Number(e.target.value))}
-                className="w-full border rounded px-3 py-2"
-                required
-              >
-                {[5, 4, 3, 2, 1].map((val) => (
-                  <option key={val} value={val}>
-                    {val} Star{val > 1 ? "s" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block mb-1 font-medium" htmlFor="reviewText">
-                Your Review
-              </label>
-              <textarea
-                id="reviewText"
-                rows={4}
-                required
-                className="w-full border rounded px-3 py-2"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-              />
-            </div>
-
-            <div className="flex space-x-2">
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-              >
-                {userReview ? "Update Review" : "Submit Review"}
-              </button>
-              {userReview && (
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-
         {/* Reviews List */}
         <div className="space-y-6">
           {reviews?.length > 0 ? (
@@ -352,7 +200,7 @@ const DetailedSessionPage = () => {
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No reviews yet. Be the first to review!</p>
+            <p className="text-gray-500">No reviews yet.</p>
           )}
         </div>
       </div>
