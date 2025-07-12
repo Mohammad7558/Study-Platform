@@ -44,6 +44,7 @@ const UploadMaterial = () => {
           title: data.title,
           sessionId: data.sessionId,
           tutorEmail: user.email,
+          tutorName: user?.displayName,
           image: imageUrl,
           link: data.link,
         };

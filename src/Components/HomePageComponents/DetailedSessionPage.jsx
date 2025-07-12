@@ -23,7 +23,7 @@ const DetailedSessionPage = () => {
   });
 
   // Get reviews for this session
-  const { data: reviews } = useQuery({
+  const { data: reviews = [] } = useQuery({
     queryKey: ["sessionReviews", id],
     queryFn: async () => {
       const res = await axiosSecure.get(`/reviews?sessionId=${id}`);
@@ -53,6 +53,7 @@ const DetailedSessionPage = () => {
   if (!session) return <p className="text-center mt-10">No session found</p>;
 
   const {
+    _id,
     title,
     tutorName,
     description,
@@ -111,6 +112,14 @@ const DetailedSessionPage = () => {
     }
   };
 
+  // ⭐ Average rating calculation
+  const averageRating =
+    reviews.length > 0
+      ? (
+          reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
+        ).toFixed(1)
+      : null;
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
       <h1 className="text-2xl font-bold mb-2">{title}</h1>
@@ -163,18 +172,30 @@ const DetailedSessionPage = () => {
           : "Book Now (Disabled)"}
       </button>
 
-      {/* Reviews Section */}
+      {/* 🔥 Reviews Section */}
       <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-4">Reviews</h2>
-        
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Reviews</h2>
+          {averageRating && (
+            <div className="text-yellow-600 font-medium text-sm flex items-center space-x-2">
+              <span>⭐ Average Rating:</span>
+              <span className="text-black font-bold">{averageRating}</span>
+              <span className="text-gray-500">/ 5 ({reviews.length} review{reviews.length > 1 ? "s" : ""})</span>
+            </div>
+          )}
+        </div>
+
         {/* Reviews List */}
         <div className="space-y-6">
-          {reviews?.length > 0 ? (
+          {reviews.length > 0 ? (
             reviews.map((review) => (
               <div key={review._id} className="border-b pb-4">
                 <div className="flex items-start space-x-3">
                   <img
-                    src={review.studentPhotoUrl || "https://i.ibb.co/M1q7YVw/default-user.png"}
+                    src={
+                      review.studentPhotoUrl ||
+                      "https://i.ibb.co/M1q7YVw/default-user.png"
+                    }
                     alt={review.studentName}
                     className="w-10 h-10 rounded-full object-cover"
                   />
@@ -189,10 +210,13 @@ const DetailedSessionPage = () => {
                         ))}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{review.reviewText}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {review.reviewText}
+                    </p>
                     {review.updatedAt && (
                       <p className="text-xs text-gray-400 mt-1">
-                        Last updated: {new Date(review.updatedAt).toLocaleString()}
+                        Last updated:{" "}
+                        {new Date(review.updatedAt).toLocaleString()}
                       </p>
                     )}
                   </div>

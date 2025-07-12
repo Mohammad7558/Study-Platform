@@ -1,73 +1,57 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import SingleUser from './SingleUser';
+import ViewSingleMaterials from './ViewSingleMaterials';
 import useAxiosSecure from '../../Hooks/useAxiosSecure';
-import useAuth from '../../Hooks/useAuth';
 
-const AllUsers = () => {
+const ViewAllMaterials = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const axiosSecure = useAxiosSecure();
-    const { user: currentUser } = useAuth();
 
-    // Fetch users with React Query
     const { 
-        data: users = [], 
+        data: materials = [], 
         isLoading, 
         error, 
         refetch 
     } = useQuery({
-        queryKey: ['users', searchQuery],
+        queryKey: ['admin-materials'],
         queryFn: async () => {
-            const endpoint = searchQuery 
-                ? `/search-users?query=${encodeURIComponent(searchQuery)}`
-                : '/all-users';
-            const { data } = await axiosSecure.get(endpoint);
+            const { data } = await axiosSecure.get('/admin/materials');
             return data;
         },
-        staleTime: 5 * 60 * 1000,
     });
 
-    const handleRoleUpdate = async (userId, newRole, currentRole, userEmail) => {
-        if (newRole === currentRole) return;
+    const handleDelete = async (materialId) => {
+        const confirmDelete = window.confirm('Are you sure you want to delete this material?');
+        if (!confirmDelete) return;
 
-        const updatePromise = axiosSecure.patch(
-            `/update-user-role/${userId}`,
-            { 
-                role: newRole,
-                currentUserEmail: currentUser.email // Pass current admin email
-            }
-        );
+        const deletePromise = axiosSecure.delete(`/admin/materials/${materialId}`);
 
-        toast.promise(updatePromise, {
-            loading: 'Updating user role...',
+        toast.promise(deletePromise, {
+            loading: 'Deleting material...',
             success: () => {
                 refetch();
-                return 'User role updated successfully!';
+                return 'Material deleted successfully!';
             },
-            error: (err) => {
-                return err.response?.data?.message || 'Failed to update user role';
-            },
+            error: 'Failed to delete material',
         });
     };
+
+    const filteredMaterials = materials.filter(material => 
+        material.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        material.tutorEmail?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="sm:flex sm:items-center sm:justify-between mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Study Materials Management</h1>
                     <p className="mt-2 text-sm text-gray-700">
-                        View and manage all registered users
+                        Review and manage all uploaded study materials
                     </p>
                 </div>
-                <button
-                    onClick={() => refetch()}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                    <ArrowPathIcon className="-ml-1 mr-2 h-4 w-4" />
-                    Refresh
-                </button>
             </div>
 
             {/* Search Bar */}
@@ -77,26 +61,26 @@ const AllUsers = () => {
                 </div>
                 <input
                     type="text"
-                    placeholder="Search users by name or email..."
+                    placeholder="Search materials by title or tutor email..."
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
 
-            {/* Users Table */}
+            {/* Materials Table */}
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                 {isLoading ? (
                     <div className="p-8 text-center text-gray-500">
-                        Loading users...
+                        Loading materials...
                     </div>
                 ) : error ? (
                     <div className="p-8 text-center text-red-500">
                         Error: {error.message}
                     </div>
-                ) : users.length === 0 ? (
+                ) : filteredMaterials.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">
-                        No users found
+                        No materials found
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -104,23 +88,25 @@ const AllUsers = () => {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        User
+                                        Title
                                     </th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Email
+                                        Tutor
                                     </th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Role
+                                        Type
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {users.map(user => (
-                                    <SingleUser 
-                                        key={user._id} 
-                                        user={user} 
-                                        currentUserEmail={currentUser?.email}
-                                        onRoleUpdate={handleRoleUpdate}
+                                {filteredMaterials.map(material => (
+                                    <ViewSingleMaterials 
+                                        key={material._id} 
+                                        material={material} 
+                                        onDelete={() => handleDelete(material._id)}
                                     />
                                 ))}
                             </tbody>
@@ -132,4 +118,4 @@ const AllUsers = () => {
     );
 };
 
-export default AllUsers;
+export default ViewAllMaterials;

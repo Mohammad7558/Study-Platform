@@ -25,6 +25,8 @@ import CreateNotes from "../Pages/StudentPages/CreateNotes";
 import ManagePersonalNotes from "../Pages/StudentPages/ManagePersonalNotes";
 import ViewAllStudyMet from "../Pages/StudentPages/ViewAllStudyMet";
 import DetailedBookedCard from "../Pages/StudentPages/DetailedBookedCard";
+import AllSessions from "../Pages/AdminPages/AllSessions";
+import ViewAllMaterials from "../Pages/AdminPages/ViewAllMaterials";
 
 export const router = createBrowserRouter([
     {
@@ -116,7 +118,15 @@ export const router = createBrowserRouter([
             {
                 path: '/dashboard/all-users',
                 element: <AdminRoutes><AllUsers/></AdminRoutes>
-            }
+            },
+            {
+                path: '/dashboard/all-sessions',
+                element: <AdminRoutes><AllSessions/></AdminRoutes>
+            },
+            {
+                path: '/dashboard/all-materials',
+                element: <AdminRoutes><ViewAllMaterials/></AdminRoutes>
+            },
         ]
     }
 ])
