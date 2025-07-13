@@ -1,24 +1,31 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { 
   ClockIcon, 
   CalendarIcon, 
   UserIcon, 
   CheckIcon, 
-  XMarkIcon 
+  XMarkIcon,
+  CurrencyDollarIcon,
+  InformationCircleIcon
 } from "@heroicons/react/24/outline";
 import useUserRole from "../../Hooks/useUserRole";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
 import useAuth from "../../Hooks/useAuth";
 import Swal from "sweetalert2";
+import StripeProviderWrapper from "../StripeProviderWrapper";
+import CheckoutForm from "../CheckoutForm";
+
 
 const DetailedSessionPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { role, isRoleLoading } = useUserRole();
   const axiosSecure = useAxiosSecure();
   const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   // Get single session data
   const { data: session, isLoading } = useQuery({
@@ -74,7 +81,6 @@ const DetailedSessionPage = () => {
     classStartDate,
     classEndDate,
     duration,
-    registrationFee,
     sessionType,
     price
   } = session;
@@ -122,35 +128,48 @@ const DetailedSessionPage = () => {
   );
 
   const handleBooking = async () => {
-    try {
-      const bookedData = {
-        sessionId: _id,
-        title,
-        tutorName,
-        tutorEmail,
-        studentName: user.displayName,
-        studentEmail: user.email,
-        studentPhotoUrl: user.photoURL,
-        registrationDate: new Date().toISOString(),
-        status: "registered",
-        sessionType,
-        price
-      };
+    // For free sessions, book directly
+    if (session.sessionType === 'free' || session.price === 0) {
+      try {
+        const bookedData = {
+          sessionId: _id,
+          title,
+          tutorName,
+          tutorEmail,
+          studentName: user.displayName,
+          studentEmail: user.email,
+          studentPhotoUrl: user.photoURL,
+          registrationDate: new Date().toISOString(),
+          status: "registered",
+          sessionType,
+          price
+        };
 
-      const res = await axiosSecure.post("/booked-sessions", bookedData);
+        const res = await axiosSecure.post("/booked-sessions", bookedData);
 
-      if (res.status === 409) {
-        Swal.fire("Already Booked", "You've already booked this session", "info");
-        return;
+        if (res.status === 409) {
+          Swal.fire("Already Booked", "You've already booked this session", "info");
+          return;
+        }
+
+        if (res.data.insertedId) {
+          Swal.fire("Success", "Session booked successfully!", "success");
+          setIsAlreadyBooked(true);
+          navigate('/payment-success');
+        }
+      } catch (error) {
+        Swal.fire("Error", error.response?.data?.message || "Booking failed", "error");
       }
-
-      if (res.data.insertedId) {
-        Swal.fire("Success", "Session booked successfully!", "success");
-        setIsAlreadyBooked(true);
-      }
-    } catch (error) {
-      Swal.fire("Error", error.response?.data?.message || "Booking failed", "error");
+    } else {
+      // For paid sessions, show payment form
+      setShowPaymentForm(true);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setIsAlreadyBooked(true);
+    setShowPaymentForm(false);
+    navigate('/dashboard/booked-sessions');
   };
 
   // Calculate average rating
@@ -197,26 +216,72 @@ const DetailedSessionPage = () => {
           <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
             Duration: {duration}
           </div>
-          <div className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-            Fee: {registrationFee === 0 ? "Free" : `$${registrationFee}`}
+          <div className={`px-3 py-1 rounded-full ${price > 0 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'} text-sm font-medium flex items-center`}>
+            <CurrencyDollarIcon className="h-4 w-4 mr-1" />
+            {price > 0 ? `Paid: $${price}` : 'Free'}
           </div>
         </div>
 
-        <button
-          onClick={handleBooking}
-          disabled={!canBook}
-          className={`px-6 py-3 rounded-md font-medium ${
-            canBook
-              ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-              : "bg-gray-300 text-gray-600 cursor-not-allowed"
-          }`}
-        >
-          {isAlreadyBooked
-            ? "Already Booked"
-            : canBook
-            ? "Book Now"
-            : "Registration Closed"}
-        </button>
+        <div className="flex items-center gap-4">
+          {!showPaymentForm ? (
+            <button
+              onClick={handleBooking}
+              disabled={!canBook}
+              className={`px-6 py-3 rounded-md font-medium flex items-center gap-2 ${
+                canBook
+                  ? price > 0 
+                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-gray-300 text-gray-600 cursor-not-allowed"
+              }`}
+            >
+              {isAlreadyBooked
+                ? "Already Booked"
+                : canBook
+                ? (
+                  <>
+                    {price > 0 ? (
+                      <>
+                        <span>Book Now for ${price}</span>
+                        <CurrencyDollarIcon className="h-5 w-5" />
+                      </>
+                    ) : (
+                      <>
+                        <span>Enroll for Free</span>
+                        <CheckIcon className="h-5 w-5" />
+                      </>
+                    )}
+                  </>
+                )
+                : "Registration Closed"}
+            </button>
+          ) : null}
+
+          {price > 0 && canBook && !showPaymentForm && (
+            <div className="text-sm text-gray-500 flex items-center">
+              <InformationCircleIcon className="h-5 w-5 mr-1" />
+              {price > 0 ? "Payment required upon booking" : "Free enrollment"}
+            </div>
+          )}
+        </div>
+
+        {/* Payment Form for Paid Sessions */}
+        {showPaymentForm && (
+          <div className="mt-6 p-4 border-t">
+            <h3 className="text-lg font-medium mb-3">Complete Your Payment</h3>
+            <StripeProviderWrapper>
+              <CheckoutForm
+                session={{
+                  ...session,
+                  studentName: user.displayName,
+                  studentEmail: user.email,
+                  studentPhotoUrl: user.photoURL
+                }} 
+                onSuccess={handlePaymentSuccess}
+              />
+            </StripeProviderWrapper>
+          </div>
+        )}
       </div>
 
       {/* Reviews Section */}

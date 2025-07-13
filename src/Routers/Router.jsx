@@ -28,6 +28,7 @@ import DetailedBookedCard from "../Pages/StudentPages/DetailedBookedCard";
 import AllSessions from "../Pages/AdminPages/AllSessions";
 import ViewAllMaterials from "../Pages/AdminPages/ViewAllMaterials";
 import ViewRejectedFeedBacks from "../Pages/TutorPages/ViewRejectedFeedBacks";
+import PaymentSuccess from "../Components/PaymentSuccess";
 
 export const router = createBrowserRouter([
     {
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
                 path: '/session/:id',
                 element: <PrivateRouters><DetailedSessionPage/></PrivateRouters>
             },
+            {
+                path: '/payment-success',
+                element: <PrivateRouters><PaymentSuccess/></PrivateRouters>
+            }
         ]
     },
     {
