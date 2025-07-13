@@ -35,7 +35,7 @@ const Header = () => {
             <Link to="/all-session" className="hover:text-cyan-400 transition">
               All Sessions
             </Link>
-            <Link to="/tutors" className="hover:text-cyan-400 transition">
+            <Link to="/all-tutors" className="hover:text-cyan-400 transition">
               Tutors
             </Link>
 

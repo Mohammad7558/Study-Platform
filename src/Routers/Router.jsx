@@ -29,6 +29,7 @@ import AllSessions from "../Pages/AdminPages/AllSessions";
 import ViewAllMaterials from "../Pages/AdminPages/ViewAllMaterials";
 import ViewRejectedFeedBacks from "../Pages/TutorPages/ViewRejectedFeedBacks";
 import PaymentSuccess from "../Components/PaymentSuccess";
+import TutorProfile from "../Pages/AllTutors/TutorProfile";
 
 export const router = createBrowserRouter([
     {
@@ -61,7 +62,7 @@ export const router = createBrowserRouter([
                 element: <Sessions/>
             },
             {
-                path: '/tutors',
+                path: '/all-tutors',
                 element: <AllTutors/>
             },
             {
@@ -71,6 +72,10 @@ export const router = createBrowserRouter([
             {
                 path: '/payment-success',
                 element: <PrivateRouters><PaymentSuccess/></PrivateRouters>
+            },
+            {
+                path: '/tutor-profile/:id',
+                element: <PrivateRouters><TutorProfile/></PrivateRouters>
             }
         ]
     },

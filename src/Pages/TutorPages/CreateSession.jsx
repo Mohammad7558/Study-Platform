@@ -19,6 +19,7 @@ const CreateSession = () => {
       tutorEmail: email || "",
       registrationFee: 0,
       status: "pending",
+      created_at: new Date()
     },
   });
 
