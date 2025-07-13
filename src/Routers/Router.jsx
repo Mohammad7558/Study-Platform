@@ -75,7 +75,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: '/tutor-profile/:id',
-                element: <PrivateRouters><TutorProfile/></PrivateRouters>
+                element: <TutorProfile/>
             }
         ]
     },

@@ -8,7 +8,7 @@ const PaymentSuccess = () => {
         Your session has been booked successfully.
       </p>
       <Link 
-        to="/my-bookings"
+        to="/dashboard/booked-sessions"
         className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded inline-block"
       >
         View My Bookings
