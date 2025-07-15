@@ -1,14 +1,39 @@
 import axios from 'axios';
-import React from 'react';
-
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import useAuth from './useAuth';
 
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:5000',
-    withCredentials: true
-})
+  baseURL: 'http://localhost:5000',
+  withCredentials: true,
+});
 
 const useAxiosSecure = () => {
-    return axiosInstance
+  const navigate = useNavigate();
+  const { logOut } = useAuth();
+
+  useEffect(() => {
+    const interceptor = axiosInstance.interceptors.response.use(
+      response => response,
+      async error => {
+        if (error.response?.status === 401) {
+          try {
+            await logOut();
+          } catch (logoutError) {
+            console.error("Logout failed:", logoutError);
+          }
+          navigate('/login');
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axiosInstance.interceptors.response.eject(interceptor);
+    };
+  }, [navigate, logOut]);
+
+  return axiosInstance;
 };
 
 export default useAxiosSecure;

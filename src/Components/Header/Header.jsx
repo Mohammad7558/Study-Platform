@@ -1,169 +1,199 @@
-import React, { useState } from "react";
-import { BiMenu, BiX } from "react-icons/bi";
-import { Link } from "react-router";
+import React from "react";
+import { Link, useNavigate } from "react-router";
+import { Menu } from "lucide-react";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "../../Components/ui/avatar";
+import { Button } from "../../Components/ui/button";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetClose,
+} from "../../Components/ui/sheet";
 import useAuth from "../../Hooks/useAuth";
+import axios from "axios";
+import {
+  FiHome,
+  FiInfo,
+  FiCalendar,
+  FiUsers,
+  FiUser,
+  FiLogOut,
+  FiLogIn,
+  FiUserPlus,
+} from "react-icons/fi";
 
 const Header = () => {
   const { user, logOut } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
+      await axios.post("http://localhost:5000/logout", {}, { withCredentials: true });
       await logOut();
+      navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
+  const NavLinks = (
+    <>
+      <Link to="/" className="flex items-center px-3 py-2 text-sm font-medium hover:text-primary hover:underline underline-offset-4">
+        <FiHome className="mr-2 h-4 w-4" />
+        Home
+      </Link>
+      <Link to="/about" className="flex items-center px-3 py-2 text-sm font-medium hover:text-primary hover:underline underline-offset-4">
+        <FiInfo className="mr-2 h-4 w-4" />
+        About
+      </Link>
+      <Link to="/all-session" className="flex items-center px-3 py-2 text-sm font-medium hover:text-primary hover:underline underline-offset-4">
+        <FiCalendar className="mr-2 h-4 w-4" />
+        Sessions
+      </Link>
+      <Link to="/all-tutors" className="flex items-center px-3 py-2 text-sm font-medium hover:text-primary hover:underline underline-offset-4">
+        <FiUsers className="mr-2 h-4 w-4" />
+        Tutors
+      </Link>
+    </>
+  );
+
   return (
-    <header className="bg-gray-900 text-white shadow-md">
-      <div className="container mx-auto px-5 md:px-0 lg:px-0">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0 text-2xl font-bold text-cyan-400">
-            <Link to="/">My Website</Link>
-          </div>
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex h-16 container items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Logo */}
+        <Link to="/" className="text-xl font-bold text-primary">EduSphere</Link>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex space-x-6 items-center">
-            <Link to="/" className="hover:text-cyan-400 transition">
-              Home
-            </Link>
-            <Link to="/about" className="hover:text-cyan-400 transition">
-              About
-            </Link>
-            <Link to="/all-session" className="hover:text-cyan-400 transition">
-              All Sessions
-            </Link>
-            <Link to="/all-tutors" className="hover:text-cyan-400 transition">
-              Tutors
-            </Link>
+        {/* Nav Links - Desktop */}
+        <nav className="hidden lg:flex items-center space-x-2">
+          {NavLinks}
+        </nav>
 
-            {user ? (
-              <>
-              <Link to='/dashboard'>Dashboard</Link>
-                <div className="flex items-center gap-3 ml-4">
-                  {user.photoURL && (
-                    <img
-                      src={user.photoURL}
-                      alt="user"
-                      className="w-8 h-8 rounded-full border-2 border-cyan-600"
-                    />
-                  )}
-                  <span className="text-sm text-white">
-                    {user.displayName || user.email}
-                  </span>
-                  <button
-                    onClick={handleLogout}
-                    className="ml-2 px-4 py-2 bg-red-600 rounded-md hover:bg-red-700 transition"
-                  >
-                    Log Out
-                  </button>
+        {/* Right - Auth/User/Buttons */}
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <div className="hidden md:flex items-center space-x-4">
+              <Link to="/dashboard" className="text-sm font-medium hover:text-primary hover:underline underline-offset-4 flex items-center">
+                <FiUser className="mr-1 h-4 w-4" />
+                Dashboard
+              </Link>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user.photoURL} />
+                <AvatarFallback>
+                  {user.displayName?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="border-destructive text-destructive hover:bg-destructive/10"
+              >
+                <FiLogOut className="mr-1 h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <div className="hidden md:flex space-x-2">
+              <Link to="/login">
+                <Button variant="ghost" size="sm" className="flex items-center">
+                  <FiLogIn className="mr-1 h-4 w-4" />
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button size="sm" className="flex items-center bg-primary text-white hover:bg-primary/90">
+                  <FiUserPlus className="mr-1 h-4 w-4" />
+                  Join Now
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile Menu */}
+          <div className="lg:hidden">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 focus-visible:ring-2"
+                >
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] sm:w-[300px] z-50">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <span className="text-lg font-bold text-primary p-3">EduSphere</span>
+                  </div>
+
+                  <div className="flex flex-col space-y-4 pt-6">
+                    {NavLinks}
+                  </div>
+
+                  <div className="mt-auto p-4">
+                    {user ? (
+                      <>
+                        <div className="flex items-center mb-4 space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.photoURL} />
+                            <AvatarFallback>
+                              {user.displayName?.[0]?.toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">
+                              {user.displayName || user.email}
+                            </p>
+                          </div>
+                        </div>
+                        <Link to="/dashboard">
+                          <Button variant="outline" className="w-full mb-2 flex items-center">
+                            <FiUser className="mr-2 h-4 w-4" />
+                            Dashboard
+                          </Button>
+                        </Link>
+                        <Button
+                          onClick={handleLogout}
+                          variant="destructive"
+                          className="w-full flex items-center"
+                        >
+                          <FiLogOut className="mr-2 h-4 w-4" />
+                          Sign Out
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col space-y-2">
+                        <SheetClose asChild>
+                          <Link to="/login">
+                            <Button variant="outline" className="w-full flex items-center">
+                              <FiLogIn className="mr-2 h-4 w-4" />
+                              Sign In
+                            </Button>
+                          </Link>
+                        </SheetClose>
+                        <SheetClose asChild>
+                          <Link to="/register">
+                            <Button className="w-full flex items-center">
+                              <FiUserPlus className="mr-2 h-4 w-4" />
+                              Join Now
+                            </Button>
+                          </Link>
+                        </SheetClose>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="block mt-2 px-4 py-2 bg-cyan-600 rounded-md hover:bg-cyan-700 transition text-center"
-                >
-                  Log In
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setIsOpen(false)}
-                  className="block mt-2 px-4 py-2 bg-cyan-600 rounded-md hover:bg-cyan-700 transition text-center"
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </nav>
-
-          {/* Mobile Menu Toggle */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="focus:outline-none"
-            >
-              {isOpen ? <BiX size={28} /> : <BiMenu size={28} />}
-            </button>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
-
-      {/* Mobile Nav */}
-      {isOpen && (
-        
-        <div className="md:hidden px-4 pb-4 space-y-2">
-          <Link
-            to="/"
-            onClick={() => setIsOpen(false)}
-            className="block hover:text-cyan-400"
-          >
-            Home
-          </Link>
-          <Link
-            to="/about"
-            onClick={() => setIsOpen(false)}
-            className="block hover:text-cyan-400"
-          >
-            About
-          </Link>
-          <Link
-            to="/contact"
-            onClick={() => setIsOpen(false)}
-            className="block hover:text-cyan-400"
-          >
-            Contact
-          </Link>
-          <Link to='/dashboard'>Dashboard</Link>
-
-          {user ? (
-            <>
-              <div className="flex items-center gap-3 mt-3">
-                {user.photoURL && (
-                  <img
-                    src={user.photoURL}
-                    alt="user"
-                    className="w-8 h-8 rounded-full border-2 border-cyan-600"
-                  />
-                )}
-                <span className="text-sm">
-                  {user.displayName || user.email}
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  handleLogout();
-                  setIsOpen(false);
-                }}
-                className="w-full mt-2 px-4 py-2 bg-red-600 rounded-md hover:bg-red-700 transition"
-              >
-                Log Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                onClick={() => setIsOpen(false)}
-                className="block mt-2 px-4 py-2 bg-cyan-600 rounded-md hover:bg-cyan-700 transition text-center"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setIsOpen(false)}
-                className="block mt-2 px-4 py-2 bg-cyan-600 rounded-md hover:bg-cyan-700 transition text-center"
-              >
-                Register
-              </Link>
-            </>
-          )}
-        </div>
-      )}
     </header>
   );
 };
