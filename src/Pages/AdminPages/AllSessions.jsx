@@ -7,7 +7,8 @@ import {
   PencilIcon,
   TrashIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import useAxiosSecure from '../../Hooks/useAxiosSecure';
@@ -232,7 +233,7 @@ const AllSessions = () => {
                                                     </span>
                                                 )}
                                                 <span className="mt-1 text-xs text-gray-500">
-                                                    {session.duration} minutes
+                                                   {session.duration}
                                                 </span>
                                             </div>
                                         </td>

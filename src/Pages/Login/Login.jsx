@@ -4,7 +4,7 @@ import useAuth from "../../Hooks/useAuth";
 import toast from "react-hot-toast";
 import { Link, useLocation, useNavigate } from "react-router";
 import { GoogleAuthProvider } from "firebase/auth";
-import { FcGoogle } from "react-icons/fc"; // ✅ Google icon
+import { FcGoogle } from "react-icons/fc";
 
 const Login = () => {
   const { signInUser, createUserWithGoogle } = useAuth();

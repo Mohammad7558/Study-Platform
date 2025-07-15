@@ -7,15 +7,12 @@ const StudentRoutes = ({ children }) => {
   const { user, loading } = useAuth();
   const { role, isRoleLoading } = useUserRole();
   const location = useLocation();
-
   if (loading || isRoleLoading) {
     return <Spinner />;
   }
-
   if (!user || role !== 'student') {
     return <Navigate to="/forbidden" state={{ from: location }} replace />;
   }
-
   return children;
 };
 
