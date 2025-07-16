@@ -5,7 +5,7 @@ import useAxiosSecure from "../../Hooks/useAxiosSecure";
 
 const CreateSession = () => {
   const { user } = useAuth();
-  const { displayName, email } = user || {};
+  const { displayName, email, photoURL } = user || {};
   const axiosSecure = useAxiosSecure();
 
   const {
@@ -17,6 +17,7 @@ const CreateSession = () => {
     defaultValues: {
       tutorName: displayName || "",
       tutorEmail: email || "",
+      tutorPhotoUrl: photoURL,
       registrationFee: 0,
       status: "pending",
       created_at: new Date()
@@ -25,6 +26,7 @@ const CreateSession = () => {
 
   const onSubmit = async(data) => {
     // Here you can send data to backend API
+    console.log(data);
     const res = await axiosSecure.post('/session', data);
     console.log(res);
     reset()
