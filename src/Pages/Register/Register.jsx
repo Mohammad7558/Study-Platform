@@ -10,7 +10,8 @@ import useAxios from "../../Hooks/useAxios";
 // document title
 
 const Register = () => {
-  const { createUserWithEmail, updateUser, setUser, createUserWithGoogle } = useAuth();
+  const { createUserWithEmail, updateUser, setUser, createUserWithGoogle } =
+    useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location?.state?.from?.pathname || "/";
@@ -27,12 +28,15 @@ const Register = () => {
     const { email, password, name, photoUrl } = data;
 
     try {
+      // 1. First create Firebase user
       const res = await createUserWithEmail(email, password);
       const user = res.user;
 
+      // 2. Update Firebase profile
       await updateUser({ displayName: name, photoURL: photoUrl });
       setUser({ ...user, displayName: name, photoURL: photoUrl });
 
+      // 3. Create user in MongoDB
       const userInfo = {
         name,
         email,
@@ -42,6 +46,10 @@ const Register = () => {
       };
 
       await axiosInstance.post("/users", userInfo);
+
+      // 4. Now manually trigger JWT creation
+      await axiosInstance.post("/jwt", { email }, { withCredentials: true });
+
       toast.success("User registered successfully");
       navigate(from, { replace: true });
     } catch (error) {
@@ -85,7 +93,10 @@ const Register = () => {
         </div>
 
         {/* Form Section */}
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full p-8 space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="w-full p-8 space-y-6"
+        >
           <h2 className="text-3xl font-bold text-center text-gray-800">
             Create Account
           </h2>
@@ -124,7 +135,9 @@ const Register = () => {
               className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
@@ -146,7 +159,9 @@ const Register = () => {
               className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
@@ -162,7 +177,9 @@ const Register = () => {
               className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
             />
             {errors.photoUrl && (
-              <p className="text-red-500 text-sm mt-1">{errors.photoUrl.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.photoUrl.message}
+              </p>
             )}
           </div>
 

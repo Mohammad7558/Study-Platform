@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { AuthContext } from './AuthContext';
+import React, { useEffect, useState } from "react";
+import { AuthContext } from "./AuthContext";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -7,9 +7,9 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
-} from 'firebase/auth';
-import { auth } from '../../Firebase/Firebase.config';
-import axios from 'axios';
+} from "firebase/auth";
+import { auth } from "../../Firebase/Firebase.config";
+import axios from "axios";
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -30,9 +30,13 @@ const AuthProvider = ({ children }) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const logOut = async() => {
+  const logOut = async () => {
     setLoading(true);
-    await axios.post('http://localhost:5000/logout', {}, { withCredentials: true });
+    await axios.post(
+      "http://localhost:5000/logout",
+      {},
+      { withCredentials: true }
+    );
     return signOut(auth);
   };
 
@@ -41,24 +45,32 @@ const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    setUser(currentUser);
+    setLoading(false);
 
-      if(currentUser?.email){
-        axios.post('http://localhost:5000/jwt', {email: currentUser.email}, {withCredentials: true})
-        .then(res => {
-          console.log(res.data);
-        })
-        .catch(error => {
-          console.log(error);
-        })
+    if (currentUser?.email) {
+      try {
+        // First check if user exists in MongoDB
+        const userExists = await axios.get(
+          `http://localhost:5000/users/${currentUser.email}`
+        );
+        
+        if (userExists.data) {
+          await axios.post(
+            "http://localhost:5000/jwt",
+            { email: currentUser.email },
+            { withCredentials: true }
+          );
+        }
+      } catch (error) {
+        console.log("JWT creation skipped - user not in DB yet");
       }
+    }
+  });
 
-    });
-
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, []);
 
   const userInfo = {
     user,
@@ -72,7 +84,9 @@ const AuthProvider = ({ children }) => {
     updateUser,
   };
 
-  return <AuthContext.Provider value={userInfo}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={userInfo}>{children}</AuthContext.Provider>
+  );
 };
 
 export default AuthProvider;

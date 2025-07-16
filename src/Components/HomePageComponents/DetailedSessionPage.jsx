@@ -1,42 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import { 
-  ClockIcon, 
-  CalendarIcon, 
-  UserIcon, 
-  CheckIcon, 
-  XMarkIcon,
+import {
+  ArrowLeftIcon,
+  CalendarIcon,
+  CheckIcon,
+  ClockIcon,
   CurrencyDollarIcon,
   InformationCircleIcon,
+  LockClosedIcon,
   StarIcon,
-  ArrowLeftIcon,
-  LockClosedIcon
+  UserIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import useUserRole from "../../Hooks/useUserRole";
-import useAxiosSecure from "../../Hooks/useAxiosSecure";
 import useAuth from "../../Hooks/useAuth";
-import StripeProviderWrapper from "../StripeProviderWrapper";
+import useAxiosSecure from "../../Hooks/useAxiosSecure";
+import useUserRole from "../../Hooks/useUserRole";
 import CheckoutForm from "../CheckoutForm";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import StripeProviderWrapper from "../StripeProviderWrapper";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { Progress } from "../ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Skeleton } from "../ui/skeleton";
 
 const DetailedSessionPage = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { role, isRoleLoading } = useUserRole();
   const axiosSecure = useAxiosSecure();
   const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
@@ -62,13 +57,15 @@ const DetailedSessionPage = () => {
   });
 
   // Get booking counts
-  const { data: bookingCounts = { totalBookings: 0, paidCount: 0 } } = useQuery({
-    queryKey: ["bookingCounts", id],
-    queryFn: async () => {
-      const res = await axiosSecure.get(`/api/session/${id}/bookings-count`);
-      return res.data;
-    },
-  });
+  const { data: bookingCounts = { totalBookings: 0, paidCount: 0 } } = useQuery(
+    {
+      queryKey: ["bookingCounts", id],
+      queryFn: async () => {
+        const res = await axiosSecure.get(`/api/session/${id}/bookings-count`);
+        return res.data;
+      },
+    }
+  );
 
   // Check if user already booked this session
   useEffect(() => {
@@ -108,18 +105,35 @@ const DetailedSessionPage = () => {
 
   if (!session) {
     return (
-      <div className="max-w-4xl mx-auto p-6 text-center">
-        <Alert variant="destructive">
-          <InformationCircleIcon className="h-4 w-4" />
-          <AlertTitle>Session not found</AlertTitle>
-          <AlertDescription>
-            The session you're looking for doesn't exist or may have been removed.
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => navigate(-1)} className="mt-4">
-          <ArrowLeftIcon className="h-4 w-4 mr-2" />
-          Go back
-        </Button>
+      <div className="max-w-4xl mx-auto p-6 h-screen">
+        <div className="flex flex-col items-center justify-center space-y-6 text-center">
+          <div className="bg-muted p-6 rounded-full">
+            <InformationCircleIcon className="h-10 w-10 text-primary" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">
+              Session Not Found
+            </h2>
+            <p className="text-muted-foreground">
+              The session you're looking for doesn't exist or may have been
+              removed.
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={() => navigate(-1)}>
+              <ArrowLeftIcon className="h-4 w-4 mr-2" />
+              Go back
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/all-sessionss")}
+            >
+              Browse all sessions
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -136,7 +150,7 @@ const DetailedSessionPage = () => {
     classEndDate,
     duration,
     sessionType,
-    price
+    price,
   } = session;
 
   // Date calculations
@@ -179,7 +193,7 @@ const DetailedSessionPage = () => {
       return {
         text: "Login to Enroll",
         disabled: true,
-        variant: "outline"
+        variant: "outline",
       };
     }
 
@@ -188,7 +202,7 @@ const DetailedSessionPage = () => {
       return {
         text: "You can't enroll",
         disabled: true,
-        variant: "outline"
+        variant: "outline",
       };
     }
 
@@ -197,7 +211,7 @@ const DetailedSessionPage = () => {
       return {
         text: `Already Registered`,
         disabled: true,
-        variant: "default"
+        variant: "default",
       };
     }
 
@@ -206,7 +220,7 @@ const DetailedSessionPage = () => {
       return {
         text: "Registration Opens Soon",
         disabled: true,
-        variant: "outline"
+        variant: "outline",
       };
     }
 
@@ -215,7 +229,7 @@ const DetailedSessionPage = () => {
       return {
         text: "Registration Closed",
         disabled: true,
-        variant: "outline"
+        variant: "outline",
       };
     }
 
@@ -224,7 +238,7 @@ const DetailedSessionPage = () => {
       return {
         text: price > 0 ? `Enroll Now - $${price}` : "Enroll for Free",
         disabled: false,
-        variant: "default"
+        variant: "default",
       };
     }
 
@@ -232,15 +246,22 @@ const DetailedSessionPage = () => {
     return {
       text: "Enrollment Not Available",
       disabled: true,
-      variant: "outline"
+      variant: "outline",
     };
   };
 
   const buttonState = getButtonState();
 
   const handleBooking = async () => {
-    if (session.sessionType === 'free' || session.price === 0) {
+    if (session.sessionType === "free" || session.price === 0) {
       try {
+        // Optimistic update
+        queryClient.setQueryData(["bookingCounts", id], (old) => ({
+          ...old,
+          totalBookings: old.totalBookings + 1,
+          paidCount: price > 0 ? old.paidCount + 1 : old.paidCount,
+        }));
+
         const bookedData = {
           sessionId: _id,
           title,
@@ -253,28 +274,44 @@ const DetailedSessionPage = () => {
           status: "registered",
           sessionType,
           price,
-          paymentStatus: "not_required"
+          paymentStatus: "not_required",
         };
 
         const res = await axiosSecure.post("/booked-sessions", bookedData);
 
         if (res.status === 409) {
+          // Revert optimistic update if already booked
+          queryClient.setQueryData(["bookingCounts", id], (old) => ({
+            ...old,
+            totalBookings: old.totalBookings - 1,
+            paidCount: price > 0 ? old.paidCount - 1 : old.paidCount,
+          }));
+
           toast.warning("Already Booked", {
-            description: "You've already booked this session"
+            description: "You've already booked this session",
           });
           return;
         }
 
         if (res.data.insertedId) {
           toast.success("Success", {
-            description: "Session booked successfully!"
+            description: "Session booked successfully!",
           });
           setIsAlreadyBooked(true);
-          navigate('/payment-success');
+          // Ensure counts are fresh
+          await queryClient.invalidateQueries(["bookingCounts", id]);
+          navigate("/payment-success");
         }
       } catch (error) {
+        // Revert optimistic update on error
+        queryClient.setQueryData(["bookingCounts", id], (old) => ({
+          ...old,
+          totalBookings: old.totalBookings - 1,
+          paidCount: price > 0 ? old.paidCount - 1 : old.paidCount,
+        }));
+
         toast.error("Error", {
-          description: error.response?.data?.message || "Booking failed"
+          description: error.response?.data?.message || "Booking failed",
         });
       }
     } else {
@@ -285,29 +322,42 @@ const DetailedSessionPage = () => {
   const handlePaymentSuccess = () => {
     setIsAlreadyBooked(true);
     setShowPaymentDialog(false);
-    setPaymentStatus('success');
+    setPaymentStatus("success");
+
+    // Optimistic update for paid sessions
+    queryClient.setQueryData(["bookingCounts", id], (old) => ({
+      ...old,
+      totalBookings: old.totalBookings + 1,
+      paidCount: old.paidCount + 1,
+    }));
+
+    // Ensure counts are fresh
+    queryClient.invalidateQueries(["bookingCounts", id]);
+
     toast.success("Payment Successful", {
-      description: "Your payment has been processed successfully"
+      description: "Your payment has been processed successfully",
     });
   };
 
   const handlePaymentError = () => {
-    setPaymentStatus('error');
+    setPaymentStatus("error");
     toast.error("Payment Failed", {
-      description: "There was an issue processing your payment"
+      description: "There was an issue processing your payment",
     });
   };
 
   // Calculate average rating
-  const averageRating = reviews.length > 0 
-    ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length
-    : 0;
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) /
+        reviews.length
+      : 0;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
-      <Button 
-        onClick={() => navigate(-1)} 
-        variant="ghost" 
+      <Button
+        onClick={() => navigate(-1)}
+        variant="ghost"
         className="mb-6 gap-2"
       >
         <ArrowLeftIcon className="h-4 w-4" />
@@ -319,7 +369,9 @@ const DetailedSessionPage = () => {
         <div className="lg:col-span-2 space-y-8">
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground">{title}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                {title}
+              </h1>
               <div className="flex items-center gap-2 mt-2 text-muted-foreground">
                 <UserIcon className="h-5 w-5" />
                 <span>Tutor: {tutorName}</span>
@@ -328,7 +380,10 @@ const DetailedSessionPage = () => {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Badge variant={statusVariant} className="flex items-center gap-1">
+              <Badge
+                variant={statusVariant}
+                className="flex items-center gap-1"
+              >
                 {statusIcon}
                 {currentStatus}
               </Badge>
@@ -336,15 +391,20 @@ const DetailedSessionPage = () => {
                 <ClockIcon className="h-4 w-4" />
                 {duration}
               </Badge>
-              <Badge variant={price > 0 ? "secondary" : "default"} className="flex items-center gap-1">
+              <Badge
+                variant={price > 0 ? "secondary" : "default"}
+                className="flex items-center gap-1"
+              >
                 <CurrencyDollarIcon className="h-4 w-4" />
-                {price > 0 ? `$${price}` : 'Free'}
+                {price > 0 ? `$${price}` : "Free"}
               </Badge>
               <Badge variant="outline" className="flex items-center gap-1">
                 <UserIcon className="h-4 w-4" />
                 {bookingCounts.totalBookings} enrolled
                 {price > 0 && bookingCounts.paidCount > 0 && (
-                  <span className="text-xs ml-1">({bookingCounts.paidCount} paid)</span>
+                  <span className="text-xs ml-1">
+                    ({bookingCounts.paidCount} paid)
+                  </span>
                 )}
               </Badge>
             </div>
@@ -364,10 +424,12 @@ const DetailedSessionPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-1">
                   <p className="text-sm">
-                    <span className="font-medium">Starts:</span> {new Date(registrationStartDate).toLocaleString()}
+                    <span className="font-medium">Starts:</span>{" "}
+                    {new Date(registrationStartDate).toLocaleString()}
                   </p>
                   <p className="text-sm">
-                    <span className="font-medium">Ends:</span> {new Date(registrationEndDate).toLocaleString()}
+                    <span className="font-medium">Ends:</span>{" "}
+                    {new Date(registrationEndDate).toLocaleString()}
                   </p>
                 </CardContent>
               </Card>
@@ -381,10 +443,12 @@ const DetailedSessionPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-1">
                   <p className="text-sm">
-                    <span className="font-medium">Starts:</span> {new Date(classStartDate).toLocaleString()}
+                    <span className="font-medium">Starts:</span>{" "}
+                    {new Date(classStartDate).toLocaleString()}
                   </p>
                   <p className="text-sm">
-                    <span className="font-medium">Ends:</span> {new Date(classEndDate).toLocaleString()}
+                    <span className="font-medium">Ends:</span>{" "}
+                    {new Date(classEndDate).toLocaleString()}
                   </p>
                   <p className="text-sm mt-2">
                     <span className="font-medium">Type:</span> {sessionType}
@@ -423,35 +487,48 @@ const DetailedSessionPage = () => {
           {/* Reviews Section */}
           <div className="border-t pt-8">
             <h2 className="text-2xl font-bold mb-6">Student Feedback</h2>
-            
+
             {isReviewsLoading ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
-                  <Skeleton key={`review-skeleton-${i}`} className="h-32 w-full" />
+                  <Skeleton
+                    key={`review-skeleton-${i}`}
+                    className="h-32 w-full"
+                  />
                 ))}
               </div>
             ) : reviews.length > 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="text-4xl font-bold">{averageRating.toFixed(1)}</div>
+                  <div className="text-4xl font-bold">
+                    {averageRating.toFixed(1)}
+                  </div>
                   <div className="space-y-1">
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
-                        <StarIcon 
-                          key={`avg-star-${i}`} 
-                          className={`h-5 w-5 ${i < Math.round(averageRating) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                        <StarIcon
+                          key={`avg-star-${i}`}
+                          className={`h-5 w-5 ${
+                            i < Math.round(averageRating)
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-300"
+                          }`}
                         />
                       ))}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Based on {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+                      Based on {reviews.length} review
+                      {reviews.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   {reviews.map((review) => (
-                    <Card key={`review-${review._id}`} className="hover:shadow-sm transition-shadow">
+                    <Card
+                      key={`review-${review._id}`}
+                      className="hover:shadow-sm transition-shadow"
+                    >
                       <CardContent className="pt-6">
                         <div className="flex items-start gap-4">
                           <Avatar className="mt-1">
@@ -462,22 +539,32 @@ const DetailedSessionPage = () => {
                           </Avatar>
                           <div className="flex-1">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                              <h4 className="font-medium">{review.studentName}</h4>
+                              <h4 className="font-medium">
+                                {review.studentName}
+                              </h4>
                               <div className="flex items-center gap-2">
                                 <div className="flex">
                                   {[...Array(5)].map((_, i) => (
-                                    <StarIcon 
+                                    <StarIcon
                                       key={`review-${review._id}-star-${i}`}
-                                      className={`h-4 w-4 ${i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                                      className={`h-4 w-4 ${
+                                        i < review.rating
+                                          ? "text-yellow-400 fill-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
                                     />
                                   ))}
                                 </div>
                                 <span className="text-xs text-muted-foreground">
-                                  {new Date(review.createdAt).toLocaleDateString()}
+                                  {new Date(
+                                    review.createdAt
+                                  ).toLocaleDateString()}
                                 </span>
                               </div>
                             </div>
-                            <p className="text-muted-foreground mt-2">{review.reviewText}</p>
+                            <p className="text-muted-foreground mt-2">
+                              {review.reviewText}
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -543,7 +630,7 @@ const DetailedSessionPage = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Price</p>
                   <p className="font-medium">
-                    {price > 0 ? `$${price}` : 'Free'}
+                    {price > 0 ? `$${price}` : "Free"}
                   </p>
                 </div>
               </div>
@@ -555,7 +642,8 @@ const DetailedSessionPage = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Enrolled</p>
                   <p className="font-medium">
-                    {bookingCounts.totalBookings} student{bookingCounts.totalBookings !== 1 ? 's' : ''}
+                    {bookingCounts.totalBookings} student
+                    {bookingCounts.totalBookings !== 1 ? "s" : ""}
                     {price > 0 && bookingCounts.paidCount > 0 && (
                       <span className="text-xs text-muted-foreground ml-1">
                         ({bookingCounts.paidCount} paid)
@@ -573,12 +661,18 @@ const DetailedSessionPage = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Rating</p>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{averageRating.toFixed(1)}</span>
+                      <span className="font-medium">
+                        {averageRating.toFixed(1)}
+                      </span>
                       <div className="flex">
                         {[...Array(5)].map((_, i) => (
-                          <StarIcon 
+                          <StarIcon
                             key={`sidebar-star-${i}`}
-                            className={`h-3 w-3 ${i < Math.round(averageRating) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                            className={`h-3 w-3 ${
+                              i < Math.round(averageRating)
+                                ? "text-yellow-400 fill-yellow-400"
+                                : "text-gray-300"
+                            }`}
                           />
                         ))}
                       </div>
@@ -598,7 +692,7 @@ const DetailedSessionPage = () => {
                 <CardTitle>Ready to join?</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button 
+                <Button
                   onClick={handleBooking}
                   size="lg"
                   className="w-full gap-2"
@@ -630,7 +724,9 @@ const DetailedSessionPage = () => {
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-center">Complete Your Enrollment</DialogTitle>
+            <DialogTitle className="text-center">
+              Complete Your Enrollment
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-secondary/50 p-4 rounded-lg">
@@ -648,8 +744,8 @@ const DetailedSessionPage = () => {
                   ...session,
                   studentName: user?.displayName || "",
                   studentEmail: user?.email || "",
-                  studentPhotoUrl: user?.photoURL || ""
-                }} 
+                  studentPhotoUrl: user?.photoURL || "",
+                }}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
                 onClose={() => setShowPaymentDialog(false)}
@@ -664,23 +760,29 @@ const DetailedSessionPage = () => {
       </Dialog>
 
       {/* Payment Success Dialog */}
-      <Dialog open={paymentStatus === 'success'} onOpenChange={(open) => !open && setPaymentStatus(null)}>
+      <Dialog
+        open={paymentStatus === "success"}
+        onOpenChange={(open) => !open && setPaymentStatus(null)}
+      >
         <DialogContent className="sm:max-w-[450px] text-center">
           <div className="mx-auto flex flex-col items-center justify-center space-y-4">
             <div className="rounded-full bg-green-100 p-4">
               <CheckIcon className="h-8 w-8 text-green-600" />
             </div>
             <DialogHeader>
-              <DialogTitle className="text-2xl">Enrollment Confirmed!</DialogTitle>
+              <DialogTitle className="text-2xl">
+                Enrollment Confirmed!
+              </DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground">
-              You're now enrolled in "{title}". We've sent the details to your email.
+              You're now enrolled in "{title}". We've sent the details to your
+              email.
             </p>
             <div className="flex gap-3 pt-4">
-              <Button 
+              <Button
                 onClick={() => {
                   setPaymentStatus(null);
-                  navigate('/dashboard/booked-sessions');
+                  navigate("/dashboard/booked-sessions");
                 }}
                 className="w-full"
               >
@@ -692,7 +794,10 @@ const DetailedSessionPage = () => {
       </Dialog>
 
       {/* Payment Error Dialog */}
-      <Dialog open={paymentStatus === 'error'} onOpenChange={(open) => !open && setPaymentStatus(null)}>
+      <Dialog
+        open={paymentStatus === "error"}
+        onOpenChange={(open) => !open && setPaymentStatus(null)}
+      >
         <DialogContent className="sm:max-w-[450px] text-center">
           <div className="mx-auto flex flex-col items-center justify-center space-y-4">
             <div className="rounded-full bg-red-100 p-4">
@@ -702,10 +807,11 @@ const DetailedSessionPage = () => {
               <DialogTitle className="text-2xl">Payment Failed</DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground">
-              We couldn't process your payment. Please try again or contact support.
+              We couldn't process your payment. Please try again or contact
+              support.
             </p>
             <div className="flex gap-3 pt-4">
-              <Button 
+              <Button
                 onClick={() => {
                   setPaymentStatus(null);
                   setShowPaymentDialog(true);
@@ -714,7 +820,7 @@ const DetailedSessionPage = () => {
               >
                 Try Again
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setPaymentStatus(null)}
                 className="w-full"
