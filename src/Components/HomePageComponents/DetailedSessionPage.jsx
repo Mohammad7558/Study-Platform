@@ -8,15 +8,30 @@ import {
   CheckIcon, 
   XMarkIcon,
   CurrencyDollarIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  StarIcon,
+  ArrowLeftIcon,
+  LockClosedIcon
 } from "@heroicons/react/24/outline";
+import { toast } from "sonner";
 import useUserRole from "../../Hooks/useUserRole";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
 import useAuth from "../../Hooks/useAuth";
-import Swal from "sweetalert2";
 import StripeProviderWrapper from "../StripeProviderWrapper";
 import CheckoutForm from "../CheckoutForm";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { Progress } from "../ui/progress";
+import { Skeleton } from "../ui/skeleton";
 
 const DetailedSessionPage = () => {
   const { id } = useParams();
@@ -25,7 +40,8 @@ const DetailedSessionPage = () => {
   const { role, isRoleLoading } = useUserRole();
   const axiosSecure = useAxiosSecure();
   const [isAlreadyBooked, setIsAlreadyBooked] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState(null);
 
   // Get single session data
   const { data: session, isLoading } = useQuery({
@@ -37,10 +53,19 @@ const DetailedSessionPage = () => {
   });
 
   // Get reviews for this session
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = [], isLoading: isReviewsLoading } = useQuery({
     queryKey: ["sessionReviews", id],
     queryFn: async () => {
       const res = await axiosSecure.get(`/reviews?sessionId=${id}`);
+      return res.data;
+    },
+  });
+
+  // Get booking counts
+  const { data: bookingCounts = { totalBookings: 0, paidCount: 0 } } = useQuery({
+    queryKey: ["bookingCounts", id],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/api/session/${id}/bookings-count`);
       return res.data;
     },
   });
@@ -63,11 +88,40 @@ const DetailedSessionPage = () => {
   }, [user?.email, id, axiosSecure]);
 
   if (isLoading || isRoleLoading) {
-    return <div className="text-center mt-10">Loading session details...</div>;
+    return (
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        <Skeleton className="h-10 w-3/4" />
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+        <Skeleton className="h-12 w-48" />
+      </div>
+    );
   }
 
   if (!session) {
-    return <div className="text-center mt-10">Session not found</div>;
+    return (
+      <div className="max-w-4xl mx-auto p-6 text-center">
+        <Alert variant="destructive">
+          <InformationCircleIcon className="h-4 w-4" />
+          <AlertTitle>Session not found</AlertTitle>
+          <AlertDescription>
+            The session you're looking for doesn't exist or may have been removed.
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => navigate(-1)} className="mt-4">
+          <ArrowLeftIcon className="h-4 w-4 mr-2" />
+          Go back
+        </Button>
+      </div>
+    );
   }
 
   const {
@@ -94,41 +148,97 @@ const DetailedSessionPage = () => {
 
   // Determine session status
   let currentStatus = "";
-  let statusColor = "";
+  let statusVariant = "";
   let statusIcon = null;
 
   if (now < regStart) {
     currentStatus = "Upcoming";
-    statusColor = "bg-blue-100 text-blue-800";
-    statusIcon = <ClockIcon className="h-5 w-5 text-blue-500" />;
+    statusVariant = "secondary";
+    statusIcon = <ClockIcon className="h-4 w-4 mr-1" />;
   } else if (now >= regStart && now <= regEnd) {
     currentStatus = "Registration Open";
-    statusColor = "bg-green-100 text-green-800";
-    statusIcon = <CheckIcon className="h-5 w-5 text-green-500" />;
+    statusVariant = "default";
+    statusIcon = <CheckIcon className="h-4 w-4 mr-1" />;
   } else if (now > regEnd && now < clsStart) {
     currentStatus = "Registration Closed";
-    statusColor = "bg-yellow-100 text-yellow-800";
-    statusIcon = <XMarkIcon className="h-5 w-5 text-yellow-500" />;
+    statusVariant = "outline";
+    statusIcon = <XMarkIcon className="h-4 w-4 mr-1" />;
   } else if (now >= clsStart && now <= clsEnd) {
     currentStatus = "In Progress";
-    statusColor = "bg-purple-100 text-purple-800";
-    statusIcon = <ClockIcon className="h-5 w-5 text-purple-500" />;
+    statusVariant = "default";
+    statusIcon = <ClockIcon className="h-4 w-4 mr-1 text-purple-500" />;
   } else {
     currentStatus = "Completed";
-    statusColor = "bg-gray-100 text-gray-800";
-    statusIcon = <CheckIcon className="h-5 w-5 text-gray-500" />;
+    statusVariant = "secondary";
+    statusIcon = <CheckIcon className="h-4 w-4 mr-1" />;
   }
 
-  const canBook = (
-    now >= regStart && 
-    now <= regEnd && 
-    role === "student" && 
-    !isAlreadyBooked && 
-    user?.email
-  );
+  const getButtonState = () => {
+    // If not logged in
+    if (!user?.email) {
+      return {
+        text: "Login to Enroll",
+        disabled: true,
+        variant: "outline"
+      };
+    }
+
+    // For tutors and admins
+    if (role === "tutor" || role === "admin") {
+      return {
+        text: "You can't enroll",
+        disabled: true,
+        variant: "outline"
+      };
+    }
+
+    // If already booked
+    if (isAlreadyBooked) {
+      return {
+        text: `Already Registered`,
+        disabled: true,
+        variant: "default"
+      };
+    }
+
+    // If registration hasn't started
+    if (now < regStart) {
+      return {
+        text: "Registration Opens Soon",
+        disabled: true,
+        variant: "outline"
+      };
+    }
+
+    // If registration closed
+    if (now > regEnd) {
+      return {
+        text: "Registration Closed",
+        disabled: true,
+        variant: "outline"
+      };
+    }
+
+    // If registration is open and user is student
+    if (now >= regStart && now <= regEnd && role === "student") {
+      return {
+        text: price > 0 ? `Enroll Now - $${price}` : "Enroll for Free",
+        disabled: false,
+        variant: "default"
+      };
+    }
+
+    // Default case
+    return {
+      text: "Enrollment Not Available",
+      disabled: true,
+      variant: "outline"
+    };
+  };
+
+  const buttonState = getButtonState();
 
   const handleBooking = async () => {
-    // For free sessions, book directly
     if (session.sessionType === 'free' || session.price === 0) {
       try {
         const bookedData = {
@@ -142,34 +252,50 @@ const DetailedSessionPage = () => {
           registrationDate: new Date().toISOString(),
           status: "registered",
           sessionType,
-          price
+          price,
+          paymentStatus: "not_required"
         };
 
         const res = await axiosSecure.post("/booked-sessions", bookedData);
 
         if (res.status === 409) {
-          Swal.fire("Already Booked", "You've already booked this session", "info");
+          toast.warning("Already Booked", {
+            description: "You've already booked this session"
+          });
           return;
         }
 
         if (res.data.insertedId) {
-          Swal.fire("Success", "Session booked successfully!", "success");
+          toast.success("Success", {
+            description: "Session booked successfully!"
+          });
           setIsAlreadyBooked(true);
           navigate('/payment-success');
         }
       } catch (error) {
-        Swal.fire("Error", error.response?.data?.message || "Booking failed", "error");
+        toast.error("Error", {
+          description: error.response?.data?.message || "Booking failed"
+        });
       }
     } else {
-      // For paid sessions, show payment form
-      setShowPaymentForm(true);
+      setShowPaymentDialog(true);
     }
   };
 
   const handlePaymentSuccess = () => {
     setIsAlreadyBooked(true);
-    setShowPaymentForm(false);
-    navigate('/dashboard/booked-sessions');
+    setShowPaymentDialog(false);
+    setPaymentStatus('success');
+    toast.success("Payment Successful", {
+      description: "Your payment has been processed successfully"
+    });
+  };
+
+  const handlePaymentError = () => {
+    setPaymentStatus('error');
+    toast.error("Payment Failed", {
+      description: "There was an issue processing your payment"
+    });
   };
 
   // Calculate average rating
@@ -178,162 +304,427 @@ const DetailedSessionPage = () => {
     : 0;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
-        <div className="flex items-center text-gray-600 mb-4">
-          <UserIcon className="h-5 w-5 mr-1" />
-          <span>Tutor: {tutorName} ({tutorEmail})</span>
-        </div>
-        
-        <p className="text-gray-700 mb-6">{description}</p>
+    <div className="max-w-6xl mx-auto p-4 md:p-8">
+      <Button 
+        onClick={() => navigate(-1)} 
+        variant="ghost" 
+        className="mb-6 gap-2"
+      >
+        <ArrowLeftIcon className="h-4 w-4" />
+        Back to sessions
+      </Button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold mb-3 flex items-center">
-              <CalendarIcon className="h-5 w-5 mr-2 text-gray-500" />
-              Registration Period
-            </h3>
-            <p>Start: {new Date(registrationStartDate).toLocaleDateString()}</p>
-            <p>End: {new Date(registrationEndDate).toLocaleDateString()}</p>
-          </div>
-
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold mb-3 flex items-center">
-              <CalendarIcon className="h-5 w-5 mr-2 text-gray-500" />
-              Class Period
-            </h3>
-            <p>Start: {new Date(classStartDate).toLocaleDateString()}</p>
-            <p>End: {new Date(classEndDate).toLocaleDateString()}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4 mb-6">
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${statusColor} flex items-center`}>
-            {statusIcon}
-            <span className="ml-1">{currentStatus}</span>
-          </div>
-          <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
-            Duration: {duration}
-          </div>
-          <div className={`px-3 py-1 rounded-full ${price > 0 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'} text-sm font-medium flex items-center`}>
-            <CurrencyDollarIcon className="h-4 w-4 mr-1" />
-            {price > 0 ? `Paid: $${price}` : 'Free'}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          {!showPaymentForm ? (
-            <button
-              onClick={handleBooking}
-              disabled={!canBook}
-              className={`px-6 py-3 rounded-md font-medium flex items-center gap-2 ${
-                canBook
-                  ? price > 0 
-                    ? "bg-amber-600 hover:bg-amber-700 text-white"
-                    : "bg-green-600 hover:bg-green-700 text-white"
-                  : "bg-gray-300 text-gray-600 cursor-not-allowed"
-              }`}
-            >
-              {isAlreadyBooked
-                ? "Already Booked"
-                : canBook
-                ? (
-                  <>
-                    {price > 0 ? (
-                      <>
-                        <span>Book Now for ${price}</span>
-                        <CurrencyDollarIcon className="h-5 w-5" />
-                      </>
-                    ) : (
-                      <>
-                        <span>Enroll for Free</span>
-                        <CheckIcon className="h-5 w-5" />
-                      </>
-                    )}
-                  </>
-                )
-                : "Registration Closed"}
-            </button>
-          ) : null}
-
-          {price > 0 && canBook && !showPaymentForm && (
-            <div className="text-sm text-gray-500 flex items-center">
-              <InformationCircleIcon className="h-5 w-5 mr-1" />
-              {price > 0 ? "Payment required upon booking" : "Free enrollment"}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main content */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">{title}</h1>
+              <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                <UserIcon className="h-5 w-5" />
+                <span>Tutor: {tutorName}</span>
+                <span className="text-sm opacity-75">({tutorEmail})</span>
+              </div>
             </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={statusVariant} className="flex items-center gap-1">
+                {statusIcon}
+                {currentStatus}
+              </Badge>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <ClockIcon className="h-4 w-4" />
+                {duration}
+              </Badge>
+              <Badge variant={price > 0 ? "secondary" : "default"} className="flex items-center gap-1">
+                <CurrencyDollarIcon className="h-4 w-4" />
+                {price > 0 ? `$${price}` : 'Free'}
+              </Badge>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <UserIcon className="h-4 w-4" />
+                {bookingCounts.totalBookings} enrolled
+                {price > 0 && bookingCounts.paidCount > 0 && (
+                  <span className="text-xs ml-1">({bookingCounts.paidCount} paid)</span>
+                )}
+              </Badge>
+            </div>
+
+            <div className="prose max-w-none text-muted-foreground">
+              <p className="text-lg leading-relaxed">{description}</p>
+            </div>
+
+            {/* Session details cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Registration</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium">Starts:</span> {new Date(registrationStartDate).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Ends:</span> {new Date(registrationEndDate).toLocaleString()}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Class Schedule</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium">Starts:</span> {new Date(classStartDate).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Ends:</span> {new Date(classEndDate).toLocaleString()}
+                  </p>
+                  <p className="text-sm mt-2">
+                    <span className="font-medium">Type:</span> {sessionType}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Booking CTA */}
+            <div className="space-y-4">
+              <Button
+                onClick={handleBooking}
+                disabled={buttonState.disabled}
+                variant={buttonState.variant}
+                size="lg"
+                className="w-full md:w-auto gap-2"
+              >
+                {buttonState.text}
+                {!buttonState.disabled && price > 0 && (
+                  <CurrencyDollarIcon className="h-5 w-5" />
+                )}
+                {!buttonState.disabled && price === 0 && (
+                  <CheckIcon className="h-5 w-5" />
+                )}
+              </Button>
+
+              {price > 0 && !buttonState.disabled && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <InformationCircleIcon className="h-4 w-4" />
+                  Secure payment required to enroll
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="border-t pt-8">
+            <h2 className="text-2xl font-bold mb-6">Student Feedback</h2>
+            
+            {isReviewsLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={`review-skeleton-${i}`} className="h-32 w-full" />
+                ))}
+              </div>
+            ) : reviews.length > 0 ? (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="text-4xl font-bold">{averageRating.toFixed(1)}</div>
+                  <div className="space-y-1">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <StarIcon 
+                          key={`avg-star-${i}`} 
+                          className={`h-5 w-5 ${i < Math.round(averageRating) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Based on {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <Card key={`review-${review._id}`} className="hover:shadow-sm transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-4">
+                          <Avatar className="mt-1">
+                            <AvatarImage src={review.studentPhotoUrl} />
+                            <AvatarFallback>
+                              {review.studentName.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <h4 className="font-medium">{review.studentName}</h4>
+                              <div className="flex items-center gap-2">
+                                <div className="flex">
+                                  {[...Array(5)].map((_, i) => (
+                                    <StarIcon 
+                                      key={`review-${review._id}-star-${i}`}
+                                      className={`h-4 w-4 ${i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(review.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-muted-foreground mt-2">{review.reviewText}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Alert>
+                <InformationCircleIcon className="h-4 w-4" />
+                <AlertTitle>No reviews yet</AlertTitle>
+                <AlertDescription>
+                  Be the first to leave a review after attending the session.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle>Session Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-secondary">
+                  <UserIcon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tutor</p>
+                  <p className="font-medium">{tutorName}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-secondary">
+                  <ClockIcon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Duration</p>
+                  <p className="font-medium">{duration}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-secondary">
+                  <CalendarIcon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Next Session</p>
+                  <p className="font-medium">
+                    {new Date(classStartDate).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-secondary">
+                  <CurrencyDollarIcon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Price</p>
+                  <p className="font-medium">
+                    {price > 0 ? `$${price}` : 'Free'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-secondary">
+                  <UserIcon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Enrolled</p>
+                  <p className="font-medium">
+                    {bookingCounts.totalBookings} student{bookingCounts.totalBookings !== 1 ? 's' : ''}
+                    {price > 0 && bookingCounts.paidCount > 0 && (
+                      <span className="text-xs text-muted-foreground ml-1">
+                        ({bookingCounts.paidCount} paid)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {reviews.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-secondary">
+                    <StarIcon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Rating</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{averageRating.toFixed(1)}</span>
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <StarIcon 
+                            key={`sidebar-star-${i}`}
+                            className={`h-3 w-3 ${i < Math.round(averageRating) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        ({reviews.length})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {!buttonState.disabled && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ready to join?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleBooking}
+                  size="lg"
+                  className="w-full gap-2"
+                >
+                  {price > 0 ? (
+                    <>
+                      <span>Enroll Now - ${price}</span>
+                      <CurrencyDollarIcon className="h-5 w-5" />
+                    </>
+                  ) : (
+                    <>
+                      <span>Enroll for Free</span>
+                      <CheckIcon className="h-5 w-5" />
+                    </>
+                  )}
+                </Button>
+                {price > 0 && (
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Secure payment processed via Stripe
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           )}
         </div>
+      </div>
 
-        {/* Payment Form for Paid Sessions */}
-        {showPaymentForm && (
-          <div className="mt-6 p-4 border-t">
-            <h3 className="text-lg font-medium mb-3">Complete Your Payment</h3>
+      {/* Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-center">Complete Your Enrollment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-secondary/50 p-4 rounded-lg">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium">{title}</h3>
+                <span className="font-bold">${price}</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Tutor: {tutorName}
+              </p>
+            </div>
             <StripeProviderWrapper>
               <CheckoutForm
                 session={{
                   ...session,
-                  studentName: user.displayName,
-                  studentEmail: user.email,
-                  studentPhotoUrl: user.photoURL
+                  studentName: user?.displayName || "",
+                  studentEmail: user?.email || "",
+                  studentPhotoUrl: user?.photoURL || ""
                 }} 
                 onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+                onClose={() => setShowPaymentDialog(false)}
               />
             </StripeProviderWrapper>
-          </div>
-        )}
-      </div>
-
-      {/* Reviews Section */}
-      <div className="mt-8 border-t pt-6">
-        <h2 className="text-2xl font-bold mb-4">Reviews</h2>
-        
-        {reviews.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex items-center mb-4">
-              <div className="text-3xl font-bold mr-2">{averageRating.toFixed(1)}</div>
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <span key={`avg-star-${i}`} className="text-yellow-400">
-                    {i < Math.round(averageRating) ? "★" : "☆"}
-                  </span>
-                ))}
-              </div>
-              <span className="text-gray-500 ml-2">({reviews.length} reviews)</span>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <LockClosedIcon className="h-3 w-3" />
+              <span>Payments are secure and encrypted</span>
             </div>
-
-            {reviews.map((review) => (
-              <div key={`review-${review._id}`} className="border-b pb-4 last:border-0">
-                <div className="flex items-start gap-3">
-                  <img 
-                    src={review.studentPhotoUrl || "https://i.ibb.co/M1q7YVw/default-user.png"} 
-                    alt={review.studentName}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">{review.studentName}</h4>
-                      <div className="flex text-yellow-400">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={`review-${review._id}-star-${i}`}>
-                            {i < review.rating ? "★" : "☆"}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-gray-600 mt-1">{review.reviewText}</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(review.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
-        ) : (
-          <p className="text-gray-500">No reviews yet.</p>
-        )}
-      </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Success Dialog */}
+      <Dialog open={paymentStatus === 'success'} onOpenChange={(open) => !open && setPaymentStatus(null)}>
+        <DialogContent className="sm:max-w-[450px] text-center">
+          <div className="mx-auto flex flex-col items-center justify-center space-y-4">
+            <div className="rounded-full bg-green-100 p-4">
+              <CheckIcon className="h-8 w-8 text-green-600" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Enrollment Confirmed!</DialogTitle>
+            </DialogHeader>
+            <p className="text-muted-foreground">
+              You're now enrolled in "{title}". We've sent the details to your email.
+            </p>
+            <div className="flex gap-3 pt-4">
+              <Button 
+                onClick={() => {
+                  setPaymentStatus(null);
+                  navigate('/dashboard/booked-sessions');
+                }}
+                className="w-full"
+              >
+                View My Sessions
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Error Dialog */}
+      <Dialog open={paymentStatus === 'error'} onOpenChange={(open) => !open && setPaymentStatus(null)}>
+        <DialogContent className="sm:max-w-[450px] text-center">
+          <div className="mx-auto flex flex-col items-center justify-center space-y-4">
+            <div className="rounded-full bg-red-100 p-4">
+              <XMarkIcon className="h-8 w-8 text-red-600" />
+            </div>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Payment Failed</DialogTitle>
+            </DialogHeader>
+            <p className="text-muted-foreground">
+              We couldn't process your payment. Please try again or contact support.
+            </p>
+            <div className="flex gap-3 pt-4">
+              <Button 
+                onClick={() => {
+                  setPaymentStatus(null);
+                  setShowPaymentDialog(true);
+                }}
+                className="w-full"
+              >
+                Try Again
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setPaymentStatus(null)}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

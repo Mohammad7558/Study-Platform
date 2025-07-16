@@ -1,15 +1,14 @@
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { useState } from "react";
-
-import { useNavigate } from "react-router";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 import useAxiosSecure from "../Hooks/useAxiosSecure";
+import { Button } from "../Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../Components/ui/card";
 
-const CheckoutForm = ({ session, onSuccess }) => {
+const CheckoutForm = ({ session, onSuccess, onError, onClose }) => {
   const stripe = useStripe();
   const elements = useElements();
   const axiosSecure = useAxiosSecure();
-  const navigate = useNavigate();
 
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -44,8 +43,10 @@ const CheckoutForm = ({ session, onSuccess }) => {
 
       if (stripeError) {
         setError(stripeError.message);
-        setProcessing(false);
-        return;
+        toast.error("Payment Error", {
+          description: stripeError.message
+        });
+        throw new Error(stripeError.message);
       }
 
       if (paymentIntent.status === 'succeeded') {
@@ -68,69 +69,74 @@ const CheckoutForm = ({ session, onSuccess }) => {
         const bookingRes = await axiosSecure.post('/booked-sessions', bookingData);
         
         if (bookingRes.data.insertedId) {
-          Swal.fire({
-            title: "Success!",
-            text: "Payment and booking completed!",
-            icon: "success",
-            confirmButtonText: "View My Bookings"
-          }).then(() => {
-            onSuccess();
+          toast.success("Payment Successful", {
+            description: "Your booking has been confirmed"
           });
+          onSuccess();
         }
       }
     } catch (error) {
       console.error("Payment error:", error);
       setError(error.message || "Payment failed");
+      onError();
     } finally {
       setProcessing(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="border p-3 rounded bg-white">
-        <CardElement 
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#424770',
-                '::placeholder': {
-                  color: '#aab7c4',
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl">Payment Details</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="border p-4 rounded-lg bg-muted">
+            <CardElement 
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    '::placeholder': {
+                      color: '#aab7c4',
+                    },
+                  },
+                  invalid: {
+                    color: '#9e2146',
+                  },
                 },
-              },
-              invalid: {
-                color: '#9e2146',
-              },
-            },
-          }}
-        />
-      </div>
-      
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      
-      <div className="flex justify-between items-center">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 text-gray-600 hover:text-gray-800"
-        >
-          Cancel
-        </button>
-        
-        <button
-          type="submit"
-          disabled={!stripe || processing}
-          className={`px-6 py-2 rounded font-medium ${
-            processing 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-green-600 hover:bg-green-700 text-white'
-          }`}
-        >
-          {processing ? 'Processing...' : `Pay $${session.price}`}
-        </button>
-      </div>
-    </form>
+              }}
+            />
+          </div>
+          
+          {error && (
+            <div className="text-red-500 text-sm p-2 bg-red-50 rounded-md">
+              {error}
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={processing}
+            >
+              Cancel
+            </Button>
+            
+            <Button
+              type="submit"
+              disabled={!stripe || processing}
+              className="ml-auto"
+            >
+              {processing ? 'Processing...' : `Pay $${session.price}`}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
