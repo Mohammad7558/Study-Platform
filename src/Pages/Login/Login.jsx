@@ -1,10 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import useAuth from "../../Hooks/useAuth";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Link, useLocation, useNavigate } from "react-router";
-import { GoogleAuthProvider } from "firebase/auth";
 import { FcGoogle } from "react-icons/fc";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { GoogleAuthProvider } from "firebase/auth";
+import useAuth from "../../Hooks/useAuth";
+
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "../../Components/ui/card";
+import { Input } from "../../Components/ui/input";
+import { Label } from "../../Components/ui/label";
+import { Button } from "../../Components/ui/button";
+import { Separator } from "../../Components/ui/separator";
 
 const Login = () => {
   const { signInUser, createUserWithGoogle } = useAuth();
@@ -12,6 +26,9 @@ const Login = () => {
   const location = useLocation();
   const from = location?.state?.from?.pathname || "/";
   const provider = new GoogleAuthProvider();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const {
     register,
@@ -19,117 +36,193 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data) => {
-    const { email, password } = data;
-
-    signInUser(email, password)
-      .then((res) => {
-        toast.success("Logged in successfully");
-        navigate(from, { replace: true });
-      })
-      .catch((error) => {
-        toast.error(error.message);
-        console.error(error);
-      });
+  const onSubmit = async (data) => {
+    setIsLoading(true);
+    try {
+      const { email, password } = data;
+      await signInUser(email, password);
+      toast.success("Logged in successfully");
+      navigate(from, { replace: true });
+    } catch (error) {
+      toast.error(error.message || "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logInUser = () => {
-    createUserWithGoogle(provider)
-      .then((result) => {
-        toast.success("Logged in with Google");
-        navigate(from, { replace: true });
-      })
-      .catch((error) => {
-        toast.error(error.message);
-      });
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      await createUserWithGoogle(provider);
+      toast.success("Logged in with Google");
+      navigate(from, { replace: true });
+    } catch (error) {
+      toast.error(error.message || "Google login failed");
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
-    <div className="flex justify-center items-center lg:min-h-screen min-h-[80vh] bg-gradient-to-br px-4 py-10 lg:py-0">
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden grid md:grid-cols-2">
-        {/* Image Section */}
-        <div className="hidden md:block bg-cyan-600">
-          <img
-            src="https://source.unsplash.com/600x600/?login,technology"
-            alt="Login illustration"
-            className="h-full w-full object-cover"
-          />
+    <div className="min-h-screen flex">
+      {/* Left Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <Card className="border-0 shadow-none">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-center">
+                Welcome back
+              </CardTitle>
+              <CardDescription className="text-center">
+                Enter your credentials to access your account
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="grid gap-4">
+              {/* Google Sign-In */}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleLoading}
+              >
+                {isGoogleLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <FcGoogle className="h-4 w-4 mr-2" />
+                    Continue with Google
+                  </>
+                )}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    OR
+                  </span>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                {/* Email Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "Invalid email format",
+                      },
+                    })}
+                    className="h-10"
+                  />
+                  {errors.email && (
+                    <p className="text-sm font-medium text-destructive">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Password Field */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="password">Password</Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      {...register("password", {
+                        required: "Password is required",
+                        minLength: {
+                          value: 6,
+                          message: "Minimum 6 characters required",
+                        },
+                      })}
+                      className="h-10 pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-sm font-medium text-destructive">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : (
+                    "Log In"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+
+            <CardFooter className="flex flex-col items-center gap-3 pt-2">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Register
+                </Link>
+              </p>
+            </CardFooter>
+          </Card>
         </div>
+      </div>
 
-        {/* Form Section */}
-        <form onSubmit={handleSubmit(onSubmit)} className="w-full p-8 space-y-6">
-          <h2 className="text-3xl font-bold text-center text-gray-800">Log In</h2>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email Address
-            </label>
-            <input
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Invalid email format",
-                },
-              })}
-              type="email"
-              placeholder="you@example.com"
-              className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Minimum 6 characters required",
-                },
-              })}
-              type="password"
-              placeholder="Your password"
-              className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded-md font-semibold transition duration-300"
-          >
-            Log In
-          </button>
-
-          {/* Google Sign-In */}
-          <div className="flex items-center justify-center">
-            <button
-              type="button"
-              onClick={logInUser}
-              className="w-full flex items-center justify-center gap-3 border border-gray-300 hover:border-cyan-600 text-gray-700 hover:text-cyan-700 px-4 py-2 rounded-md transition duration-300"
-            >
-              <FcGoogle size={22} />
-              Continue with Google
-            </button>
-          </div>
-
-          {/* Link to Register */}
-          <p className="text-sm text-center text-gray-600">
-            Don’t have an account?{" "}
-            <Link to="/register" className="text-cyan-600 font-medium underline">
-              Register
-            </Link>
+      {/* Right Side - Sky Blue Background */}
+      <div className="hidden lg:flex lg:w-1/2 bg-sky-100 items-center justify-center p-12">
+        <div className="text-center max-w-md">
+          <img
+            src="https://illustrations.popsy.co/amber/login.svg"
+            alt="Login illustration"
+            className="w-full max-w-xs mx-auto mb-8"
+          />
+          <h2 className="text-2xl font-bold text-sky-800 mb-4">
+            Welcome Back!
+          </h2>
+          <p className="text-sky-700">
+            Log in to access your personalized dashboard and continue your journey with us.
           </p>
-        </form>
+        </div>
       </div>
     </div>
   );

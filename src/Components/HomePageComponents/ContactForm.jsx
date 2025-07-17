@@ -23,10 +23,7 @@ export const ContactForm = () => {
     <div className="lg:mt-32 mt-16">
       <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <Badge variant="outline" className="mb-4 text-sm font-medium">
-            Get In Touch
-          </Badge>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
             Contact Our Team
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -94,7 +91,7 @@ export const ContactForm = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 mt-5">
                 <Avatar>
                   <AvatarImage src="/avatars/support-team.png" />
                   <AvatarFallback>ST</AvatarFallback>

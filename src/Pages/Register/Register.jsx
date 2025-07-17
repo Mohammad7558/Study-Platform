@@ -1,13 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import useAuth from "../../Hooks/useAuth";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Link, useLocation, useNavigate } from "react-router";
 import { FcGoogle } from "react-icons/fc";
+import { FiEye, FiEyeOff, FiUpload, FiX, FiUser, FiMail, FiLock } from "react-icons/fi";
 import { GoogleAuthProvider } from "firebase/auth";
+import { Loader2 } from "lucide-react";
+
+import useAuth from "../../Hooks/useAuth";
 import useAxios from "../../Hooks/useAxios";
 
-// document title
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "../../Components/ui/card";
+import { Input } from "../../Components/ui/input";
+import { Button } from "../../Components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../../Components/ui/form";
+import { Separator } from "../../Components/ui/separator";
 
 const Register = () => {
   const { createUserWithEmail, updateUser, setUser, createUserWithGoogle } =
@@ -18,199 +38,375 @@ const Register = () => {
   const provider = new GoogleAuthProvider();
   const axiosInstance = useAxios();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+    },
+  });
+
+  const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY;
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.match("image.*")) {
+      toast.error("Please upload a valid image (JPEG, PNG)");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be under 5MB");
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    document.getElementById("profile-upload").value = "";
+  };
+
+  const uploadImageToImgBB = async (file) => {
+    if (!file) return null;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch(
+        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+      if (!data.success) throw new Error("Image upload failed");
+
+      return data.data.url;
+    } catch (err) {
+      toast.error("Failed to upload image");
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const onSubmit = async (data) => {
-    const { email, password, name, photoUrl } = data;
+    setIsLoading(true);
+    const { email, password, name } = data;
 
     try {
-      // 1. First create Firebase user
+      let photoUrl = "";
+      if (imageFile) {
+        photoUrl = await uploadImageToImgBB(imageFile);
+        if (!photoUrl) toast.warning("Account created without profile photo");
+      }
+
       const res = await createUserWithEmail(email, password);
       const user = res.user;
 
-      // 2. Update Firebase profile
-      await updateUser({ displayName: name, photoURL: photoUrl });
-      setUser({ ...user, displayName: name, photoURL: photoUrl });
+      await updateUser({ displayName: name, photoURL: photoUrl || "" });
+      setUser({ ...user, displayName: name, photoURL: photoUrl || "" });
 
-      // 3. Create user in MongoDB
       const userInfo = {
         name,
         email,
-        photoUrl,
+        photoUrl: photoUrl || "",
         role: "student",
         created_at: new Date().toISOString(),
       };
 
       await axiosInstance.post("/users", userInfo);
-
-      // 4. Now manually trigger JWT creation
       await axiosInstance.post("/jwt", { email }, { withCredentials: true });
 
-      toast.success("User registered successfully");
+      toast.success("Account created successfully!");
       navigate(from, { replace: true });
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast.error(error.message);
+    } catch (err) {
+      toast.error(err.message || "Registration failed");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const makeUserWithGoogle = async () => {
+  const handleGoogleSignUp = async () => {
+    setIsGoogleLoading(true);
     try {
-      const result = await createUserWithGoogle(provider);
-      const user = result.user;
+      const res = await createUserWithGoogle(provider);
+      const user = res.user;
 
       const userInfo = {
         name: user.displayName,
         email: user.email,
-        photoUrl: user.photoURL,
+        photoUrl: user.photoURL || "",
         role: "student",
         created_at: new Date().toISOString(),
       };
 
       await axiosInstance.post("/users", userInfo);
-      toast.success("User registered with Google");
+      await axiosInstance.post(
+        "/jwt",
+        { email: user.email },
+        { withCredentials: true }
+      );
+
+      toast.success("Google account linked!");
       navigate(from, { replace: true });
-    } catch (error) {
-      console.error("Google signup error:", error);
-      toast.error(error.message);
+    } catch (err) {
+      toast.error(err.message || "Google sign-up failed");
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center lg:min-h-screen min-h-[80vh] bg-gradient-to-br px-4 py-10 lg:py-0">
-      <div className="w-full max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden grid md:grid-cols-2">
-        {/* Image Section */}
-        <div className="hidden md:block bg-cyan-600">
-          <img
-            src="https://source.unsplash.com/600x600/?technology,abstract"
-            alt="Register illustration"
-            className="h-full w-full object-cover"
-          />
+    <div className="min-h-screen flex">
+      {/* Left Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <Card className="border-0 lg:shadow-none shadow-xl lg:p-0 px-3">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-4xl font-bold text-center">
+                Sign up
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="grid gap-4">
+              {/* Google Sign-In */}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleSignUp}
+                disabled={isGoogleLoading}
+              >
+                {isGoogleLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <FcGoogle className="h-4 w-4 mr-2" />
+                    Continue with Google
+                  </>
+                )}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    OR
+                  </span>
+                </div>
+              </div>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  {/* Profile Image Upload */}
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative group">
+                      <label
+                        htmlFor="profile-upload"
+                        className="cursor-pointer"
+                      >
+                        <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center transition-all group-hover:border-blue-500 group-hover:bg-gray-50">
+                          {imagePreview ? (
+                            <>
+                              <img
+                                src={imagePreview}
+                                alt="Profile preview"
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/30 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <FiUpload className="text-white h-5 w-5" />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <FiUser className="text-gray-400 h-5 w-5" />
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                      <input
+                        id="profile-upload"
+                        type="file"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                      />
+                      {imagePreview && (
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-sm hover:bg-gray-100 transition-colors border border-gray-200"
+                        >
+                          <FiX className="h-4 w-4 text-gray-500" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Name Field */}
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    rules={{ required: "Name is required" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              placeholder="Enter your full name"
+                              {...field}
+                              className="h-10 pl-10"
+                            />
+                            <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Email Field */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    rules={{
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "Invalid email format",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              placeholder="your@email.com"
+                              {...field}
+                              className="h-10 pl-10"
+                            />
+                            <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Password Field */}
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    rules={{
+                      required: "Password is required",
+                      minLength: {
+                        value: 6,
+                        message: "Password must be at least 6 characters",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Create a password"
+                              {...field}
+                              className="h-10 pl-10 pr-10"
+                            />
+                            <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <button
+                              type="button"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <FiEyeOff className="h-4 w-4" />
+                              ) : (
+                                <FiEye className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    className="w-full mt-2"
+                    disabled={isLoading || isUploading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Continue with Email"
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+
+            <div className="text-center text-sm mt-4 pb-6">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="underline"
+              >
+                Log in
+              </Link>
+            </div>
+          </Card>
         </div>
+      </div>
 
-        {/* Form Section */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="w-full p-8 space-y-6"
-        >
-          <h2 className="text-3xl font-bold text-center text-gray-800">
-            Create Account
+      {/* Right Side - Sky Blue Background */}
+      <div className="hidden lg:flex lg:w-1/2 bg-sky-100 items-center justify-center p-12">
+        <div className="text-center max-w-md">
+          <img
+            src="https://illustrations.popsy.co/amber/digital-nomad.svg"
+            alt="Sign up illustration"
+            className="w-full max-w-xs mx-auto mb-8"
+          />
+          <h2 className="text-2xl font-bold text-sky-800 mb-4">
+            Join Our Community
           </h2>
-
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Full Name
-            </label>
-            <input
-              {...register("name", { required: "Name is required" })}
-              type="text"
-              placeholder="Your name"
-              className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email Address
-            </label>
-            <input
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Invalid email format",
-                },
-              })}
-              type="email"
-              placeholder="you@example.com"
-              className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Minimum 6 characters required",
-                },
-              })}
-              type="password"
-              placeholder="Your password"
-              className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {/* Photo URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Photo URL
-            </label>
-            <input
-              {...register("photoUrl", { required: "Photo URL is required" })}
-              type="url"
-              placeholder="https://your-photo-link.com"
-              className="w-full px-4 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-600"
-            />
-            {errors.photoUrl && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.photoUrl.message}
-              </p>
-            )}
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded-md font-semibold transition duration-300"
-          >
-            Register
-          </button>
-
-          {/* Google Sign In */}
-          <div className="flex items-center justify-center">
-            <button
-              type="button"
-              onClick={makeUserWithGoogle}
-              className="w-full flex items-center justify-center gap-3 border border-gray-300 hover:border-cyan-600 text-gray-700 hover:text-cyan-700 px-4 py-2 rounded-md transition duration-300 cursor-pointer"
-            >
-              <FcGoogle size={22} />
-              Continue with Google
-            </button>
-          </div>
-
-          {/* Link to Login */}
-          <p className="text-sm text-center text-gray-600">
-            Already have an account?{" "}
-            <Link to="/login" className="text-cyan-600 font-medium underline">
-              Log In
-            </Link>
+          <p className="text-sky-700">
+            Create your account and get access to all our premium features and
+            resources.
           </p>
-        </form>
+        </div>
       </div>
     </div>
   );
