@@ -19,6 +19,7 @@ import { Input } from "../../Components/ui/input";
 import { Label } from "../../Components/ui/label";
 import { Button } from "../../Components/ui/button";
 import { Separator } from "../../Components/ui/separator";
+import useAxiosSecure from "../../Hooks/useAxiosSecure";
 
 const Login = () => {
   const { signInUser, createUserWithGoogle } = useAuth();
@@ -29,6 +30,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const axiosSecure = useAxiosSecure();
 
   const {
     register,
@@ -40,7 +42,21 @@ const Login = () => {
     setIsLoading(true);
     try {
       const { email, password } = data;
-      await signInUser(email, password);
+      const res = await signInUser(email, password);
+      const user = res.user;
+
+      // ✅ JWT Token Set via cookie
+      await axiosSecure.post(
+        "/jwt",
+        { email: user.email },
+        { withCredentials: true }
+      );
+
+      // ✅ Optional: Fetch Role to ensure it exists
+      await axiosSecure.get(`/users/${user.email}/role`, {
+        withCredentials: true,
+      });
+
       toast.success("Logged in successfully");
       navigate(from, { replace: true });
     } catch (error) {
@@ -51,17 +67,27 @@ const Login = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await createUserWithGoogle(provider);
-      toast.success("Logged in with Google");
-      navigate(from, { replace: true });
-    } catch (error) {
-      toast.error(error.message || "Google login failed");
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
+  setIsGoogleLoading(true);
+  try {
+    const res = await createUserWithGoogle(provider);
+    const user = res.user;
+
+    // ✅ JWT Token Set via cookie
+    await axiosSecure.post("/jwt", { email: user.email }, { withCredentials: true });
+
+    // ✅ Optional: Fetch Role to ensure it's assigned
+    await axiosSecure.get(`/users/${user.email}/role`, { withCredentials: true });
+
+    toast.success("Logged in with Google");
+    navigate(from, { replace: true });
+
+  } catch (error) {
+    toast.error(error.message || "Google login failed");
+  } finally {
+    setIsGoogleLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex">
@@ -176,11 +202,7 @@ const Login = () => {
                 </div>
 
                 {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -220,7 +242,8 @@ const Login = () => {
             Welcome Back!
           </h2>
           <p className="text-sky-700">
-            Log in to access your personalized dashboard and continue your journey with us.
+            Log in to access your personalized dashboard and continue your
+            journey with us.
           </p>
         </div>
       </div>
