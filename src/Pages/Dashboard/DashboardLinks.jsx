@@ -1,43 +1,88 @@
 import {
-  FaBook,
-  FaBookOpen,
-  FaClipboardList,
-  FaFileUpload,
-  FaFolderOpen,
-  FaHome,
-  FaPlus,
-  FaStickyNote,
-  FaTimesCircle,
-  FaUserFriends,
-} from "react-icons/fa";
+  BookIcon,
+  BookOpenIcon,
+  ClipboardListIcon,
+  FileUpIcon,
+  FolderOpenIcon,
+  HomeIcon,
+  PlusIcon,
+  StickyNoteIcon,
+  XCircleIcon,
+  UsersIcon,
+} from "lucide-react";
 import { NavLink } from "react-router";
 import useUserRole from "../../Hooks/useUserRole";
+import { cn } from "../../lib/utils";
 
 const DashboardLinks = () => {
   const { role, loading } = useUserRole();
 
-  if (loading) return <p className="text-center text-gray-500">Loading...</p>;
+  if (loading) return <p className="text-center text-muted-foreground">Loading...</p>;
 
   return (
-    <nav className="space-y-2">
-      <NavLink to="/dashboard" className={linkStyle}>
-        <FaHome /> Home
+    <div className="space-y-1">
+      <NavLink
+        to="/dashboard"
+        className={({ isActive }) =>
+          cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+            isActive && "bg-muted text-primary"
+          )
+        }
+      >
+        <HomeIcon className="h-4 w-4" />
+        Home
       </NavLink>
 
       {/* Student-only links */}
       {role === "student" && (
         <>
-          <NavLink to="/dashboard/booked-sessions" className={linkStyle}>
-            <FaClipboardList /> Booked Sessions
+          <NavLink
+            to="/dashboard/booked-sessions"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <ClipboardListIcon className="h-4 w-4" />
+            Booked Sessions
           </NavLink>
-          <NavLink to="/dashboard/create-note" className={linkStyle}>
-            <FaStickyNote /> Create Note
+          <NavLink
+            to="/dashboard/create-note"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <StickyNoteIcon className="h-4 w-4" />
+            Create Note
           </NavLink>
-          <NavLink to="/dashboard/manage-notes" className={linkStyle}>
-            <FaStickyNote /> Manage Note
+          <NavLink
+            to="/dashboard/manage-notes"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <StickyNoteIcon className="h-4 w-4" />
+            Manage Notes
           </NavLink>
-          <NavLink to="/dashboard/all-study-met" className={linkStyle}>
-            <FaStickyNote />
+          <NavLink
+            to="/dashboard/all-study-met"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <BookOpenIcon className="h-4 w-4" />
             View Materials
           </NavLink>
         </>
@@ -46,20 +91,65 @@ const DashboardLinks = () => {
       {/* Tutor-only links */}
       {role === "tutor" && (
         <>
-          <NavLink to="/dashboard/create-session" className={linkStyle}>
-            <FaPlus /> Create Session
+          <NavLink
+            to="/dashboard/create-session"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <PlusIcon className="h-4 w-4" />
+            Create Session
           </NavLink>
-          <NavLink to="/dashboard/my-session" className={linkStyle}>
-            <FaBookOpen /> My Sessions
+          <NavLink
+            to="/dashboard/my-session"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <BookOpenIcon className="h-4 w-4" />
+            My Sessions
           </NavLink>
-          <NavLink to="/dashboard/upload-materials" className={linkStyle}>
-            <FaFileUpload /> Upload Materials
+          <NavLink
+            to="/dashboard/upload-materials"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <FileUpIcon className="h-4 w-4" />
+            Upload Materials
           </NavLink>
-          <NavLink to="/dashboard/view-materials" className={linkStyle}>
-            <FaFolderOpen /> View Materials
+          <NavLink
+            to="/dashboard/view-materials"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <FolderOpenIcon className="h-4 w-4" />
+            View Materials
           </NavLink>
-          <NavLink to="/dashboard/rejected-feedback" className={linkStyle}>
-            <FaTimesCircle /> Rejected Feedback
+          <NavLink
+            to="/dashboard/rejected-feedback"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <XCircleIcon className="h-4 w-4" />
+            Rejected Feedback
           </NavLink>
         </>
       )}
@@ -67,26 +157,46 @@ const DashboardLinks = () => {
       {/* Admin-only links */}
       {role === "admin" && (
         <>
-          <NavLink to="/dashboard/all-users" className={linkStyle}>
-            <FaUserFriends /> All Users
+          <NavLink
+            to="/dashboard/all-users"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <UsersIcon className="h-4 w-4" />
+            All Users
           </NavLink>
-          <NavLink to="/dashboard/all-sessionss" className={linkStyle}>
-            <FaClipboardList /> All Sessions
+          <NavLink
+            to="/dashboard/all-sessions"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <ClipboardListIcon className="h-4 w-4" />
+            All Sessions
           </NavLink>
-          <NavLink to="/dashboard/all-materials" className={linkStyle}>
-            <FaBook /> All Materials
+          <NavLink
+            to="/dashboard/all-materials"
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                isActive && "bg-muted text-primary"
+              )
+            }
+          >
+            <BookIcon className="h-4 w-4" />
+            All Materials
           </NavLink>
         </>
       )}
-    </nav>
+    </div>
   );
 };
 
 export default DashboardLinks;
-
-const linkStyle = ({ isActive }) =>
-  `flex items-center gap-3 px-4 py-2 rounded-md transition text-sm ${
-    isActive
-      ? "bg-cyan-600 text-white"
-      : "hover:bg-gray-800 hover:text-cyan-400"
-  }`;

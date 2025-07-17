@@ -1,10 +1,45 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MagnifyingGlassIcon, TrashIcon } from "@heroicons/react/24/outline";
-import toast from "react-hot-toast";
+import { 
+  FiSearch,
+  FiTrash2,
+  FiFileText,
+  FiFile,
+  FiImage,
+  FiVideo,
+  FiAlertCircle,
+  FiRefreshCw
+} from "react-icons/fi";
+import { toast } from "sonner";
 import ViewSingleMaterials from "./ViewSingleMaterials";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
-import Swal from "sweetalert2";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "../../Components/ui/card";
+import { Input } from "../../Components/ui/input";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+} from "../../Components/ui/table";
+import { Button } from "../../components/ui/button";
+import { Skeleton } from "../../Components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "../../Components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "../../Components/ui/dialog";
 
 const ViewAllMaterials = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,30 +58,14 @@ const ViewAllMaterials = () => {
     },
   });
 
-
   const handleDelete = async (materialId) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "Do you really want to delete this material?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    });
-
-    if (!result.isConfirmed) return;
-
-    const deletePromise = axiosSecure.delete(`/admin/materials/${materialId}`);
-
-    toast.promise(deletePromise, {
-      loading: "Deleting material...",
-      success: () => {
-        refetch();
-        return "Material deleted successfully!";
-      },
-      error: "Failed to delete material",
-    });
+    try {
+      await axiosSecure.delete(`/admin/materials/${materialId}`);
+      toast.success("Material deleted successfully!");
+      refetch();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete material");
+    }
   };
 
   const filteredMaterials = materials.filter(
@@ -55,91 +74,127 @@ const ViewAllMaterials = () => {
       material.tutorEmail?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getMaterialIcon = (type) => {
+    switch (type) {
+      case 'pdf':
+        return <FiFileText className="h-4 w-4 text-red-500" />;
+      case 'document':
+        return <FiFile className="h-4 w-4 text-blue-500" />;
+      case 'image':
+        return <FiImage className="h-4 w-4 text-green-500" />;
+      case 'video':
+        return <FiVideo className="h-4 w-4 text-purple-500" />;
+      default:
+        return <FiFile className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Study Materials Management
-          </h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Review and manage all uploaded study materials
-          </p>
-        </div>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <CardTitle className="text-2xl font-bold">Study Materials Management</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Review and manage all uploaded study materials
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline" 
+            size="icon"
+            onClick={refetch}
+          >
+            <FiRefreshCw className="h-4 w-4" />
+          </Button>
+        </CardHeader>
 
-      {/* Search Bar */}
-      <div className="mb-6 relative rounded-md shadow-sm max-w-md">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search materials by title or tutor email..."
-          className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
+        <CardContent className="space-y-6">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <Input
+              placeholder="Search materials by title or tutor email..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-      {/* Materials Table */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500">
-            Loading materials...
-          </div>
-        ) : error ? (
-          <div className="p-8 text-center text-red-500">
-            Error: {error.message}
-          </div>
-        ) : filteredMaterials.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No materials found
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Title
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Tutor
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Type
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredMaterials.map((material) => (
-                  <ViewSingleMaterials
-                    key={material._id}
-                    material={material}
-                    onDelete={() => handleDelete(material._id)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+          {/* Materials Table */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-[72px] w-full rounded-lg" />
+              ))}
+            </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <FiAlertCircle className="h-4 w-4" />
+              <AlertTitle>Error loading materials</AlertTitle>
+              <AlertDescription>
+                {error.message || 'Failed to fetch materials data'}
+              </AlertDescription>
+              <Button 
+                variant="outline" 
+                className="mt-4" 
+                onClick={refetch}
+              >
+                Try Again
+              </Button>
+            </Alert>
+          ) : filteredMaterials.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <FiFile className="h-12 w-12 text-muted-foreground" />
+              <p className="text-lg font-medium text-muted-foreground">
+                No materials found
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {searchQuery ? 'Try a different search query' : 'No materials uploaded yet'}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[300px]">Title</TableHead>
+                    <TableHead>Tutor</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredMaterials.map((material) => (
+                    <ViewSingleMaterials
+                      key={material._id}
+                      material={material}
+                      onDelete={() => handleDelete(material._id)}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog - This would be used in ViewSingleMaterials */}
+      <Dialog>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the material.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline">Cancel</Button>
+            <Button variant="destructive">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

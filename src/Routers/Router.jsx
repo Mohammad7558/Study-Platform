@@ -195,7 +195,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "/dashboard/all-sessionss",
+        path: "/dashboard/all-sessions",
         element: (
           <AdminRoutes>
             <AllSessions />

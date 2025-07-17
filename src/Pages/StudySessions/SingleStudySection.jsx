@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { FiCalendar, FiDollarSign, FiClock, FiZap, FiXCircle } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { Badge } from '../../Components/ui/badge';
-import { Button } from '../../Components/ui/button';
+import { Button } from '../../components/ui/button';
 
 const SingleStudySession = ({ session }) => {
   const {

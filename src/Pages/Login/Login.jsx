@@ -231,10 +231,10 @@ const Login = () => {
       </div>
 
       {/* Right Side - Sky Blue Background */}
-      <div className="hidden lg:flex lg:w-1/2 bg-sky-100 items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-green-100 items-center justify-center p-12">
         <div className="text-center max-w-md">
           <img
-            src="https://illustrations.popsy.co/amber/login.svg"
+            src="https://i.ibb.co/tPkfRPWF/Mobile-login-bro.png"
             alt="Login illustration"
             className="w-full max-w-xs mx-auto mb-8"
           />

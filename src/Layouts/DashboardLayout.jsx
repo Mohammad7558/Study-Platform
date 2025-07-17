@@ -1,81 +1,158 @@
-import React, { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router';
+import { useState } from "react";
+import { Link, Outlet } from "react-router";
+import { HomeIcon, LogOutIcon, MenuIcon, ChevronDownIcon } from "lucide-react";
+import DashboardLinks from "../Pages/Dashboard/DashboardLinks";
+import { Button } from "../components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import {
-  FaHome,
-  FaUserCircle,
-  FaChalkboardTeacher,
-  FaBookOpen,
-  FaSignOutAlt,
-  FaBars,
-  FaTimes,
-} from 'react-icons/fa';
-import DashboardLinks from '../Pages/Dashboard/DashboardLinks';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import useAuth from "../Hooks/useAuth";
+import useUserRole from "../Hooks/useUserRole";
+import { toast } from "sonner";
 
 const DashboardLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logOut } = useAuth();
+  const { role } = useUserRole();
+
+  const handleLogOut = () => {
+    logOut()
+    .then(() => {
+      toast.success('Log Out success')
+    })
+    .catch(error => {
+      console.log(error.message);
+    })
+  }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-100">
+    <div className="min-h-screen w-full bg-muted/40">
       {/* Mobile Header */}
-      <header className="flex items-center justify-between bg-gray-900 text-white px-4 py-3 md:hidden">
-        <button onClick={() => setIsOpen(true)}>
-          <FaBars size={20} />
-        </button>
-        <h1 className="text-lg font-bold text-cyan-400">Dashboard</h1>
-        <Link to="/" className="text-cyan-400">Home</Link>
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              size="icon"
+              variant="outline"
+              className="sm:hidden"
+              onClick={() => setIsOpen(true)}
+            >
+              <MenuIcon className="h-5 w-5" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="sm:max-w-xs">
+            <nav className="grid gap-6 text-lg font-medium px-5 pt-10">
+              <div className="flex items-center gap-4 p-2">
+                <Avatar>
+                  <AvatarImage src={user?.photoURL || ""} />
+                  <AvatarFallback>
+                    {user?.displayName?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{user?.displayName || "User"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.email || "user@example.com"}
+                  </p>
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize">
+                    {role}
+                  </span>
+                </div>
+              </div>
+              <Link
+                to="/"
+                className="flex items-center gap-2 text-lg font-semibold"
+              >
+                <span>Main Home</span>
+              </Link>
+              <div className="text-xl font-bold text-primary">Dashboard</div>
+              <DashboardLinks />
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                onClick={handleLogOut}
+              >
+                <LogOutIcon className="h-4 w-4" />
+                Logout
+              </Button>
+            </nav>
+          </SheetContent>
+        </Sheet>
+        <h1 className="text-lg font-semibold text-primary">Dashboard</h1>
+        <Link to="/" className="ml-auto text-primary hover:text-primary/80">
+          Home
+        </Link>
       </header>
 
-      {/* Sidebar for desktop */}
-      <aside className="hidden md:flex w-64 flex-col bg-gray-900 text-gray-100 p-6 space-y-6 shadow-lg">
-        <Link className='bg-white text-black p-3 rounded text-center font-semibold' to='/'>
-          Main Home
-        </Link>
-        <div className="text-2xl font-bold text-cyan-500">Dashboard</div>
-        <DashboardLinks />
-        <button className="flex items-center gap-3 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 transition">
-          <FaSignOutAlt /> Logout
-        </button>
-      </aside>
-
-      {/* Sidebar Drawer for mobile */}
-      {isOpen && (
-        <div className="fixed inset-0 z-40 flex md:hidden">
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50"
-            onClick={() => setIsOpen(false)}
-          />
-
-          {/* Drawer */}
-          <div className="relative w-64 bg-gray-900 text-white p-6 space-y-6 z-50 shadow-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-xl font-bold text-cyan-400">Dashboard</div>
-              <button onClick={() => setIsOpen(false)}>
-                <FaTimes size={20} />
-              </button>
+      {/* Desktop Sidebar */}
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="fixed top-0 left-0 h-full max-h-screen w-64 border-r">
+          <div className="flex h-full flex-col gap-2">
+            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+              <Link to="/" className="flex items-center gap-2 font-semibold">
+                <span>Main Home</span>
+              </Link>
             </div>
-
-            <Link
-              to="/"
-              className="block text-black bg-white text-center py-2 rounded-md font-semibold"
-              onClick={() => setIsOpen(false)}
-            >
-              Main Home
-            </Link>
-
-            <DashboardLinks onLinkClick={() => setIsOpen(false)} />
-
-            <button className="flex items-center gap-3 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 transition w-full">
-              <FaSignOutAlt /> Logout
-            </button>
+            <div className="flex-1">
+              <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-1">
+                <div className="text-xl font-bold text-primary px-4 py-2">
+                  Dashboard
+                </div>
+                <DashboardLinks />
+              </nav>
+            </div>
+            <div className="mt-auto p-4 border-t">
+              <div className="flex items-center gap-4">
+                <Avatar>
+                  <AvatarImage src={user?.photoURL || ""} />
+                  <AvatarFallback>
+                    {user?.displayName?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">
+                    {user?.displayName || "User"}
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {user?.email || "user@example.com"}
+                  </p>
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary capitalize">
+                    {role}
+                  </span>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <ChevronDownIcon className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem className="gap-2" onClick={handleLogOut}>
+                      <LogOutIcon className="h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 p-6">
-        <Outlet />
-      </main>
+      {/* Main Content */}
+      <div className="flex flex-col md:ml-64">
+        <main className="flex-1 p-4 sm:p-6">
+          <div className="h-screen">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

@@ -35,7 +35,7 @@ const Spinner = ({
   );
 
   return center ? (
-    <div className="flex items-center justify-center w-full">{spinnerElement}</div>
+    <div className="flex items-center justify-center w-full h-screen">{spinnerElement}</div>
   ) : (
     spinnerElement
   );

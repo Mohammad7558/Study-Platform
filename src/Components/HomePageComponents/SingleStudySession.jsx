@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { FiCalendar, FiDollarSign, FiClock, FiZap, FiXCircle } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { Badge } from '../../Components/ui/badge';
-import { Button } from '../../Components/ui/button';
+import { Button } from '../../components/ui/button';
 
 const SingleStudySession = ({ session }) => {
   const {
@@ -89,7 +89,7 @@ const SingleStudySession = ({ session }) => {
         <div className="flex items-center text-gray-700 dark:text-gray-300">
           <FiDollarSign className="mr-2 text-gray-500 dark:text-gray-400 flex-shrink-0" />
           <span>
-            {sessionType === 'free' ? 'Free' : `$${price?.toFixed(2)}`}
+            {sessionType === 'free' ? 'Free' : `$${price}`}
           </span>
         </div>
       </div>
