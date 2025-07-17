@@ -68,9 +68,9 @@ const Login = () => {
       {/* Left Side - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <Card className="border-0 shadow-none">
+          <Card className="border-0 lg:shadow-none shadow-xl">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">
+              <CardTitle className="text-4xl font-bold text-center">
                 Welcome back
               </CardTitle>
               <CardDescription className="text-center">
@@ -136,7 +136,7 @@ const Login = () => {
                   <div className="flex justify-between items-center">
                     <Label htmlFor="password">Password</Label>
                     <Link
-                      to="/forgot-password"
+                      to="/"
                       className="text-sm font-medium text-primary hover:underline"
                     >
                       Forgot password?
