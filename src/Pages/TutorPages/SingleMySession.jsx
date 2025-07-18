@@ -1,10 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { format } from "date-fns";
-import Swal from "sweetalert2";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
+import { Card } from "../../Components/ui/card";
+import { Button } from "../../Components/ui/button";
+import { Badge } from "../../Components/ui/badge";
+import { CalendarDays, User, RotateCw } from "lucide-react";
+import { toast } from "sonner";
 
 const SingleMySession = ({ session, refetch }) => {
   const axiosSecure = useAxiosSecure();
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     _id,
@@ -23,101 +28,91 @@ const SingleMySession = ({ session, refetch }) => {
   const isOngoing = now >= regStart && now <= regEnd;
 
   const statusColorMap = {
-    approved:
-      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    pending:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    rejected:
-      "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    approved: "bg-green-100 text-green-800 hover:bg-green-100",
+    pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
+    rejected: "bg-red-100 text-red-800 hover:bg-red-100",
   };
 
   const handleRequestAgain = async () => {
+    setIsLoading(true);
+    const toastId = toast.loading("Resubmitting session...");
+    
     try {
       const res = await axiosSecure.patch(`/sessions/request-again/${_id}`);
+      
       if (res.data.modifiedCount > 0) {
-        await Swal.fire({
-          icon: "success",
-          title: "Request Sent!",
-          text: "Your session request has been sent for approval again.",
-          timer: 2000,
-          showConfirmButton: false,
-        });
+        toast.success("Session resubmitted for approval", { id: toastId });
         refetch();
       } else {
-        Swal.fire({
-          icon: "info",
-          title: "No Changes",
-          text: "Request could not be sent again.",
-        });
+        toast.info("The session request wasn't modified", { id: toastId });
       }
     } catch (error) {
-      const msg =
-        error?.response?.data?.error || error.message || "Something went wrong.";
-      Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: msg,
-      });
+      toast.error(
+        error.response?.data?.error || "Failed to resubmit session", 
+        { id: toastId }
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 shadow-md rounded-xl p-5 hover:shadow-xl transition duration-300">
-      <h2 className="text-xl font-bold text-cyan-600 mb-1">{title}</h2>
+    <Card className="p-6 hover:shadow-lg transition-shadow">
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-xl font-semibold leading-none tracking-tight">
+            {title}
+          </h3>
+          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+            <User className="h-4 w-4" />
+            <span>{tutorName}</span>
+          </div>
+        </div>
 
-      <p className="text-gray-800 dark:text-gray-300 mb-1">
-        <span className="font-medium">Tutor:</span> {tutorName}
-      </p>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">Registration:</span>
+            <span>
+              {format(regStart, "PP")} - {format(regEnd, "PP")}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">Classes:</span>
+            <span>
+              {format(new Date(classStartDate), "PP")} -{" "}
+              {format(new Date(classEndDate), "PP")}
+            </span>
+          </div>
+        </div>
 
-      <div className="text-sm text-gray-600 dark:text-gray-400 mb-3 space-y-1">
-        <p>
-          <span className="font-medium">Reg. Start:</span>{" "}
-          {format(regStart, "PPP")}
-        </p>
-        <p>
-          <span className="font-medium">Reg. End:</span>{" "}
-          {format(regEnd, "PPP")}
-        </p>
-        <p>
-          <span className="font-medium">Class Start:</span>{" "}
-          {format(new Date(classStartDate), "PPP")}
-        </p>
-        <p>
-          <span className="font-medium">Class End:</span>{" "}
-          {format(new Date(classEndDate), "PPP")}
-        </p>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={isOngoing ? "default" : "secondary"}>
+            {isOngoing ? "Registration Ongoing" : "Registration Closed"}
+          </Badge>
+          <Badge className={statusColorMap[status]}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Badge>
+        </div>
+
+        {status === "rejected" && (
+          <Button
+            onClick={handleRequestAgain}
+            size="sm"
+            className="mt-2"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <RotateCw className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <RotateCw className="h-4 w-4 mr-2" />
+            )}
+            Request Again
+          </Button>
+        )}
       </div>
-
-      <div className="flex gap-2 flex-wrap mb-3">
-        <span
-          className={`px-3 py-1 text-sm font-semibold rounded-full ${
-            isOngoing
-              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-              : "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-          }`}
-        >
-          {isOngoing ? "Registration: Ongoing" : "Registration: Closed"}
-        </span>
-
-        <span
-          className={`px-3 py-1 text-sm font-semibold rounded-full ${
-            statusColorMap[status] || "bg-gray-100 text-gray-800"
-          }`}
-        >
-          Status: {status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
-      </div>
-
-      {status === "rejected" && (
-        <button
-          onClick={handleRequestAgain}
-          className="mt-2 inline-block px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm rounded-lg transition"
-          type="button"
-        >
-          Request Again
-        </button>
-      )}
-    </div>
+    </Card>
   );
 };
 

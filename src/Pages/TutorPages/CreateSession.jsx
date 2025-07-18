@@ -1,18 +1,38 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import useAuth from "../../Hooks/useAuth";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
+import { Card } from "../../Components/ui/card";
+import { Button } from "../../Components/ui/button";
+import { Input } from "../../Components/ui/input";
+import { Textarea } from "../../Components/ui/textarea";
+import { Label } from "../../Components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../Components/ui/dialog";
+import { Calendar } from "../../Components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../../Components/ui/popover";
+import { CheckCircle2, Calendar as CalendarIcon } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { cn } from "../../lib/utils";
 
 const CreateSession = () => {
   const { user } = useAuth();
   const { displayName, email, photoURL } = user || {};
   const axiosSecure = useAxiosSecure();
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
       tutorName: displayName || "",
@@ -20,204 +40,384 @@ const CreateSession = () => {
       tutorPhotoUrl: photoURL,
       registrationFee: 0,
       status: "pending",
-      created_at: new Date()
+      created_at: new Date().toISOString(),
+      title: "",
+      description: "",
+      registrationStartDate: "",
+      registrationEndDate: "",
+      classStartDate: "",
+      classEndDate: "",
+      duration: "",
     },
   });
 
-  const onSubmit = async(data) => {
-    // Here you can send data to backend API
-    console.log(data);
-    const res = await axiosSecure.post('/session', data);
-    console.log(res);
-    reset()
+  const formatDateForSubmission = (dateString) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      return format(date, "yyyy-MM-dd");
+    } catch {
+      return "";
+    }
+  };
+
+  const onSubmit = async (data) => {
+    try {
+      // Format dates before submission
+      const formattedData = {
+        ...data,
+        registrationStartDate: formatDateForSubmission(data.registrationStartDate),
+        registrationEndDate: formatDateForSubmission(data.registrationEndDate),
+        classStartDate: formatDateForSubmission(data.classStartDate),
+        classEndDate: formatDateForSubmission(data.classEndDate),
+        created_at: new Date().toISOString(),
+      };
+
+      const res = await axiosSecure.post("/session", formattedData);
+      console.log(res);
+      reset();
+      setIsSuccessDialogOpen(true);
+    } catch (error) {
+      console.error("Error creating session:", error);
+    }
+  };
+
+  // Watch date values for display
+  const regStartDate = watch("registrationStartDate");
+  const regEndDate = watch("registrationEndDate");
+  const clsStartDate = watch("classStartDate");
+  const clsEndDate = watch("classEndDate");
+
+  const handleDateSelect = (fieldName, date) => {
+    if (date) {
+      setValue(fieldName, date.toISOString(), { shouldValidate: true });
+    }
+  };
+
+  const parseDateForDisplay = (dateString) => {
+    if (!dateString) return undefined;
+    try {
+      return parseISO(dateString);
+    } catch {
+      return undefined;
+    }
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-3xl font-semibold mb-8 text-center text-gray-800">
-        Create Study Session
-      </h2>
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
+      <Card className="w-full max-w-3xl p-6">
+        <h2 className="text-3xl font-semibold mb-8 text-center">
+          Create Study Session
+        </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Session Title */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Session Title
-          </label>
-          <input
-            {...register("title", { required: "Session title is required" })}
-            type="text"
-            placeholder="Enter session title"
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition
-              ${errors.title ? "border-red-500" : "border-gray-300"}`}
-          />
-          {errors.title && (
-            <p className="text-red-500 mt-1 text-sm">{errors.title.message}</p>
-          )}
-        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Session Title */}
+          <div className="space-y-2">
+            <Label htmlFor="title">Session Title *</Label>
+            <Input
+              id="title"
+              {...register("title", { required: "Session title is required" })}
+              type="text"
+              placeholder="Enter session title"
+              className={errors.title ? "border-destructive" : ""}
+            />
+            {errors.title && (
+              <p className="text-destructive text-sm">{errors.title.message}</p>
+            )}
+          </div>
 
-        {/* Tutor Name (read-only) */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Tutor Name
-          </label>
-          <input
-            value={displayName || ""}
-            readOnly
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
-          />
-          {/* Hidden input for submission */}
-          <input type="hidden" {...register("tutorName")} value={displayName || ""} />
-        </div>
+          {/* Tutor Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tutor Name (read-only) */}
+            <div className="space-y-2">
+              <Label>Tutor Name</Label>
+              <Input
+                value={displayName || ""}
+                readOnly
+                className="bg-muted cursor-not-allowed"
+              />
+              <input type="hidden" {...register("tutorName")} />
+            </div>
 
-        {/* Tutor Email (read-only) */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Tutor Email
-          </label>
-          <input
-            value={email || ""}
-            readOnly
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
-          />
-          {/* Hidden input for submission */}
-          <input type="hidden" {...register("tutorEmail")} value={email || ""} />
-        </div>
+            {/* Tutor Email (read-only) */}
+            <div className="space-y-2">
+              <Label>Tutor Email</Label>
+              <Input
+                value={email || ""}
+                readOnly
+                className="bg-muted cursor-not-allowed"
+              />
+              <input type="hidden" {...register("tutorEmail")} />
+            </div>
+          </div>
 
-        {/* Session Description */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Session Description
-          </label>
-          <textarea
-            {...register("description", {
-              required: "Description is required",
-            })}
-            rows={4}
-            placeholder="Enter session description"
-            className={`w-full px-4 py-2 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition
-              ${errors.description ? "border-red-500" : "border-gray-300"}`}
-          ></textarea>
-          {errors.description && (
-            <p className="text-red-500 mt-1 text-sm">{errors.description.message}</p>
-          )}
-        </div>
+          {/* Session Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Session Description *</Label>
+            <Textarea
+              id="description"
+              {...register("description", {
+                required: "Description is required",
+                minLength: {
+                  value: 20,
+                  message: "Description should be at least 20 characters",
+                },
+              })}
+              rows={4}
+              placeholder="Enter detailed session description..."
+              className={errors.description ? "border-destructive" : ""}
+            />
+            {errors.description && (
+              <p className="text-destructive text-sm">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
 
-        {/* Registration Start Date */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Registration Start Date
-          </label>
-          <input
-            {...register("registrationStartDate", {
-              required: "Registration start date is required",
-            })}
-            type="date"
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition
-              ${errors.registrationStartDate ? "border-red-500" : "border-gray-300"}`}
-          />
-          {errors.registrationStartDate && (
-            <p className="text-red-500 mt-1 text-sm">
-              {errors.registrationStartDate.message}
-            </p>
-          )}
-        </div>
+          {/* Date Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Registration Start Date */}
+            <div className="space-y-2">
+              <Label>Registration Start Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !regStartDate && "text-muted-foreground",
+                      errors.registrationStartDate && "border-destructive"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {regStartDate ? (
+                      format(parseISO(regStartDate), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={parseDateForDisplay(regStartDate)}
+                    onSelect={(date) => handleDateSelect("registrationStartDate", date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <input
+                type="hidden"
+                {...register("registrationStartDate", {
+                  required: "Registration start date is required",
+                })}
+              />
+              {errors.registrationStartDate && (
+                <p className="text-destructive text-sm">
+                  {errors.registrationStartDate.message}
+                </p>
+              )}
+            </div>
 
-        {/* Registration End Date */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Registration End Date
-          </label>
-          <input
-            {...register("registrationEndDate", {
-              required: "Registration end date is required",
-            })}
-            type="date"
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition
-              ${errors.registrationEndDate ? "border-red-500" : "border-gray-300"}`}
-          />
-          {errors.registrationEndDate && (
-            <p className="text-red-500 mt-1 text-sm">{errors.registrationEndDate.message}</p>
-          )}
-        </div>
+            {/* Registration End Date */}
+            <div className="space-y-2">
+              <Label>Registration End Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !regEndDate && "text-muted-foreground",
+                      errors.registrationEndDate && "border-destructive"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {regEndDate ? (
+                      format(parseISO(regEndDate), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={parseDateForDisplay(regEndDate)}
+                    onSelect={(date) => handleDateSelect("registrationEndDate", date)}
+                    initialFocus
+                    fromDate={parseDateForDisplay(regStartDate)}
+                  />
+                </PopoverContent>
+              </Popover>
+              <input
+                type="hidden"
+                {...register("registrationEndDate", {
+                  required: "Registration end date is required",
+                  validate: (value) =>
+                    !regStartDate ||
+                    new Date(value) >= new Date(regStartDate) ||
+                    "End date must be after start date",
+                })}
+              />
+              {errors.registrationEndDate && (
+                <p className="text-destructive text-sm">
+                  {errors.registrationEndDate.message}
+                </p>
+              )}
+            </div>
 
-        {/* Class Start Date */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Class Start Date
-          </label>
-          <input
-            {...register("classStartDate", {
-              required: "Class start date is required",
-            })}
-            type="date"
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition
-              ${errors.classStartDate ? "border-red-500" : "border-gray-300"}`}
-          />
-          {errors.classStartDate && (
-            <p className="text-red-500 mt-1 text-sm">{errors.classStartDate.message}</p>
-          )}
-        </div>
+            {/* Class Start Date */}
+            <div className="space-y-2">
+              <Label>Class Start Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !clsStartDate && "text-muted-foreground",
+                      errors.classStartDate && "border-destructive"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {clsStartDate ? (
+                      format(parseISO(clsStartDate), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={parseDateForDisplay(clsStartDate)}
+                    onSelect={(date) => handleDateSelect("classStartDate", date)}
+                    initialFocus
+                    fromDate={parseDateForDisplay(regEndDate)}
+                  />
+                </PopoverContent>
+              </Popover>
+              <input
+                type="hidden"
+                {...register("classStartDate", {
+                  required: "Class start date is required",
+                  validate: (value) =>
+                    !regEndDate ||
+                    new Date(value) >= new Date(regEndDate) ||
+                    "Class must start after registration ends",
+                })}
+              />
+              {errors.classStartDate && (
+                <p className="text-destructive text-sm">
+                  {errors.classStartDate.message}
+                </p>
+              )}
+            </div>
 
-        {/* Class End Date */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Class End Date
-          </label>
-          <input
-            {...register("classEndDate", {
-              required: "Class end date is required",
-            })}
-            type="date"
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition
-              ${errors.classEndDate ? "border-red-500" : "border-gray-300"}`}
-          />
-          {errors.classEndDate && (
-            <p className="text-red-500 mt-1 text-sm">{errors.classEndDate.message}</p>
-          )}
-        </div>
+            {/* Class End Date */}
+            <div className="space-y-2">
+              <Label>Class End Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !clsEndDate && "text-muted-foreground",
+                      errors.classEndDate && "border-destructive"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {clsEndDate ? (
+                      format(parseISO(clsEndDate), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={parseDateForDisplay(clsEndDate)}
+                    onSelect={(date) => handleDateSelect("classEndDate", date)}
+                    initialFocus
+                    fromDate={parseDateForDisplay(clsStartDate)}
+                  />
+                </PopoverContent>
+              </Popover>
+              <input
+                type="hidden"
+                {...register("classEndDate", {
+                  required: "Class end date is required",
+                  validate: (value) =>
+                    !clsStartDate ||
+                    new Date(value) >= new Date(clsStartDate) ||
+                    "End date must be after start date",
+                })}
+              />
+              {errors.classEndDate && (
+                <p className="text-destructive text-sm">
+                  {errors.classEndDate.message}
+                </p>
+              )}
+            </div>
+          </div>
 
-        {/* Session Duration */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Session Duration
-          </label>
-          <input
-            {...register("duration", { required: "Duration is required" })}
-            type="text"
-            placeholder="e.g., 2 weeks, 3 months"
-            className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition
-              ${errors.duration ? "border-red-500" : "border-gray-300"}`}
-          />
-          {errors.duration && (
-            <p className="text-red-500 mt-1 text-sm">{errors.duration.message}</p>
-          )}
-        </div>
+          {/* Session Duration */}
+          <div className="space-y-2">
+            <Label htmlFor="duration">Session Duration *</Label>
+            <Input
+              id="duration"
+              {...register("duration", { required: "Duration is required" })}
+              type="text"
+              placeholder="e.g., 2 weeks, 3 months"
+              className={errors.duration ? "border-destructive" : ""}
+            />
+            {errors.duration && (
+              <p className="text-destructive text-sm">{errors.duration.message}</p>
+            )}
+          </div>
 
-        {/* Registration Fee (read-only, default 0) */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Registration Fee (৳)
-          </label>
-          <input
-            value={0}
-            readOnly
-            className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
-          />
-          <input type="hidden" {...register("registrationFee")} value={0} />
-        </div>
+          {/* Registration Fee (read-only) */}
+          <div className="space-y-2">
+            <Label>Registration Fee (৳)</Label>
+            <Input value={0} readOnly className="bg-muted cursor-not-allowed" />
+            <input type="hidden" {...register("registrationFee")} />
+          </div>
 
-        {/* Status (hidden) */}
-        <input type="hidden" {...register("status")} value="pending" />
+          {/* Status (hidden) */}
+          <input type="hidden" {...register("status")} />
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 transition"
-        >
-          Create Session
-        </button>
-      </form>
+          {/* Submit Button */}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Session"}
+          </Button>
+        </form>
+      </Card>
+
+      {/* Success Dialog */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <CheckCircle2 className="h-12 w-12 text-green-500" />
+              <DialogTitle className="text-center">Session Created Successfully!</DialogTitle>
+              <DialogDescription className="text-center">
+                Your new study session has been created and is now pending approval.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+          <div className="flex justify-center mt-4">
+            <Button
+              onClick={() => setIsSuccessDialogOpen(false)}
+              className="px-6"
+            >
+              Continue
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

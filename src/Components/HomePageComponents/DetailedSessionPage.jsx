@@ -287,7 +287,7 @@ const DetailedSessionPage = () => {
           });
           setIsAlreadyBooked(true);
           await queryClient.invalidateQueries(["bookingCounts", id]);
-          navigate("/payment-success");
+          setPaymentStatus("success"); // Show success modal for free enrollment
         }
       } catch (error) {
         queryClient.setQueryData(["bookingCounts", id], (old) => ({
@@ -747,7 +747,7 @@ const DetailedSessionPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Payment Success Dialog */}
+      {/* Enrollment Success Dialog */}
       <Dialog
         open={paymentStatus === "success"}
         onOpenChange={(open) => !open && setPaymentStatus(null)}
@@ -763,8 +763,17 @@ const DetailedSessionPage = () => {
               </DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground">
-              You're now enrolled in "{title}". We've sent the details to your
-              email.
+              {price > 0 ? (
+                <>
+                  Payment successful! You're now enrolled in "{title}". 
+                  We've sent the details to your email.
+                </>
+              ) : (
+                <>
+                  You're now enrolled in "{title}" for free. 
+                  We've sent the session details to your email.
+                </>
+              )}
             </p>
             <div className="flex gap-3 pt-4">
               <Button
@@ -775,6 +784,16 @@ const DetailedSessionPage = () => {
                 className="w-full"
               >
                 View My Sessions
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPaymentStatus(null);
+                  navigate("/all-sessions");
+                }}
+                className="w-full"
+              >
+                Browse More Sessions
               </Button>
             </div>
           </div>

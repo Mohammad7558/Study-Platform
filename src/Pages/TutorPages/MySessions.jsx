@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
 import useAuth from "../../Hooks/useAuth";
 import SingleMySession from "./SingleMySession";
+import { Card } from "../../Components/ui/card";
+import { Button } from "../../Components/ui/button";
+import { Loader2 } from "lucide-react";
 
 const MySessions = () => {
   const { user } = useAuth();
@@ -22,15 +25,26 @@ const MySessions = () => {
     },
   });
 
-  if (isLoading)
-    return <p className="text-center mt-10 text-lg">Loading sessions...</p>;
-
-  if (isError)
+  if (isLoading) {
     return (
-      <p className="text-center mt-10 text-red-600 font-semibold">
-        {error.message || "Failed to load sessions"}
-      </p>
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
+  }
+
+  if (isError) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-destructive font-medium">
+          {error.message || "Failed to load sessions"}
+        </p>
+        <Button variant="outline" onClick={refetch} className="mt-4">
+          Retry
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -39,13 +53,15 @@ const MySessions = () => {
           <SingleMySession
             key={session._id}
             session={session}
-            refetch={refetch} // update হলে refetch এর জন্য ফাংশন পাঠাচ্ছি
+            refetch={refetch}
           />
         ))
       ) : (
-        <p className="col-span-full text-center text-gray-500 font-medium">
-          No sessions found.
-        </p>
+        <Card className="col-span-full p-6 text-center">
+          <p className="text-muted-foreground font-medium">
+            No sessions found.
+          </p>
+        </Card>
       )}
     </div>
   );

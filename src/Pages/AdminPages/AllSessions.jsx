@@ -39,7 +39,6 @@ import {
 import { Badge } from "../../Components/ui/badge";
 import { Skeleton } from "../../Components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "../../Components/ui/alert";
-// import { Button } from "../../Components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,7 +60,8 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "../../components/ui/avatar";
-import { Button } from "../../components/ui/button";
+import { Button } from "../../Components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../components/ui/tooltip";
 
 const AllSessions = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -231,45 +231,77 @@ const AllSessions = () => {
               </p>
             </div>
           ) : (
-            <div className="rounded-lg border">
-              <Table>
+            <div className="rounded-lg border overflow-x-auto">
+              <Table className="min-w-[800px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[300px]">Session</TableHead>
-                    <TableHead>Tutor</TableHead>
-                    <TableHead className="text-center">Price</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-[250px]">Session</TableHead>
+                    <TableHead className="w-[200px]">Tutor</TableHead>
+                    <TableHead className="w-[100px] text-center">Price</TableHead>
+                    <TableHead className="w-[150px]">Created</TableHead>
+                    <TableHead className="w-[120px]">Status</TableHead>
+                    <TableHead className="w-[80px] text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSessions.map((session) => (
                     <TableRow key={session._id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium max-w-[250px]">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
+                          <Avatar className="h-9 w-9 flex-shrink-0">
                             <AvatarImage src={session.tutorPhotoUrl} />
                             <AvatarFallback>
                               {session.tutorName?.charAt(0) || "T"}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="font-medium line-clamp-1">
-                              {session.title || "Untitled Session"}
-                            </p>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {session.description || "No description"}
-                            </p>
+                          <div className="min-w-0">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="font-medium truncate">
+                                  {session.title || "Untitled Session"}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {session.title || "Untitled Session"}
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {session.description || "No description"}
+                                </p>
+                              </TooltipTrigger>
+                              {session.description && (
+                                <TooltipContent>
+                                  {session.description}
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{session.tutorName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {session.tutorEmail}
-                          </p>
+                      <TableCell className="max-w-[200px]">
+                        <div className="min-w-0">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="font-medium truncate">
+                                {session.tutorName}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {session.tutorName}
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {session.tutorEmail}
+                              </p>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {session.tutorEmail}
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
@@ -339,7 +371,6 @@ const AllSessions = () => {
                                 </DialogHeader>
 
                                 <DialogFooter>
-                                  {/* ✅ Use DialogClose for Cancel button */}
                                   <DialogClose asChild>
                                     <Button variant="outline">Cancel</Button>
                                   </DialogClose>

@@ -2,13 +2,26 @@ import React, { useEffect } from 'react';
 import useAuth from '../../Hooks/useAuth';
 import useAxiosSecure from '../../Hooks/useAxiosSecure';
 import { useQuery } from '@tanstack/react-query';
-import { FiAlertTriangle, FiInfo, FiClock, FiCalendar, FiUser, FiBook, FiRefreshCw } from 'react-icons/fi';
+import { 
+  AlertTriangle, 
+  Info, 
+  Clock, 
+  Calendar, 
+  User, 
+  BookOpen, 
+  RefreshCw,
+  AlertCircle,
+  ChevronRight
+} from 'lucide-react';
+import { Card } from '../../Components/ui/card';
+import { Button } from '../../Components/ui/button';
+import { Badge } from '../../Components/ui/badge';
+import { Skeleton } from '../../Components/ui/skeleton';
 
 const ViewRejectedFeedBacks = () => {
     const { user } = useAuth();
     const axiosSecure = useAxiosSecure();
     
-    // Fetch all rejected sessions for the tutor with enhanced error handling
     const { 
         data: rejectedSessions = [], 
         isLoading, 
@@ -26,12 +39,11 @@ const ViewRejectedFeedBacks = () => {
             }
         },
         enabled: !!user?.email,
-        staleTime: 0, // Always consider data stale
-        refetchOnMount: true, // Refetch when component mounts
-        refetchOnWindowFocus: true, // Refetch when window regains focus
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnWindowFocus: true,
     });
 
-    // Force a refetch when the component mounts
     useEffect(() => {
         if (user?.email) {
             refetch();
@@ -60,35 +72,31 @@ const ViewRejectedFeedBacks = () => {
 
     if (isLoading || isRefetching) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <div className="flex flex-col items-center">
-                    <FiRefreshCw className="animate-spin text-blue-500 text-2xl mb-2" />
-                    <p className="text-gray-600">Loading rejected sessions...</p>
-                </div>
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Loading rejected sessions...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="text-center py-10">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-                    <FiAlertTriangle className="w-8 h-8 text-red-600" />
+            <div className="flex flex-col items-center justify-center py-10 gap-6">
+                <div className="flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full">
+                    <AlertCircle className="h-8 w-8 text-destructive" />
                 </div>
-                <h2 className="text-xl font-semibold text-red-600">Error Loading Data</h2>
-                <p className="text-gray-600 mt-2 mb-6 max-w-md mx-auto">{error.message}</p>
-                <button
-                    onClick={handleManualRefresh}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center mx-auto"
-                >
-                    <FiRefreshCw className="mr-2" />
+                <div className="text-center space-y-2">
+                    <h2 className="text-xl font-semibold">Error Loading Data</h2>
+                    <p className="text-muted-foreground max-w-md">{error.message}</p>
+                </div>
+                <Button onClick={handleManualRefresh}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Try Again
-                </button>
+                </Button>
             </div>
         );
     }
 
-    // Separate sessions with feedback and those without
     const sessionsWithFeedback = rejectedSessions.filter(session => 
         session.rejectionReason || session.feedback
     );
@@ -98,109 +106,107 @@ const ViewRejectedFeedBacks = () => {
     );
 
     return (
-        <div className="max-w-6xl mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Rejected Sessions Feedback</h1>
-                <button
+        <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Rejected Sessions Feedback</h1>
+                    <p className="text-muted-foreground">
+                        Review feedback on your rejected session requests
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
                     onClick={handleManualRefresh}
-                    className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
                     disabled={isRefetching}
                 >
-                    <FiRefreshCw className={`mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
                     Refresh
-                </button>
+                </Button>
             </div>
             
             {/* Sessions with feedback */}
-            <div className="mb-12">
-                <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                    <FiAlertTriangle className="mr-2 text-red-500" />
-                    Sessions with Feedback ({sessionsWithFeedback.length})
-                </h2>
+            <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    <h2 className="text-xl font-semibold">Sessions with Feedback</h2>
+                    <Badge variant="outline" className="ml-2">
+                        {sessionsWithFeedback.length}
+                    </Badge>
+                </div>
                 
                 {sessionsWithFeedback.length === 0 ? (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                        <p className="text-blue-700">No sessions with feedback available</p>
-                    </div>
+                    <Card className="p-6 text-center bg-muted/50">
+                        <p className="text-muted-foreground">No sessions with feedback available</p>
+                    </Card>
                 ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         {sessionsWithFeedback.map((session) => (
-                            <div key={session._id} className="bg-white rounded-lg shadow-md overflow-hidden border border-red-100">
-                                <div className="p-6">
-                                    <div className="flex flex-col md:flex-row md:items-start justify-between">
-                                        <div className="mb-4 md:mb-0">
-                                            <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                                                <FiBook className="mr-2 text-blue-500" />
-                                                {session.title}
-                                            </h2>
-                                            <div className="flex items-center mt-1 text-gray-600">
-                                                <FiUser className="mr-1" />
-                                                <span className="text-sm">
-                                                    Subject: {session.subject || 'Not specified'}
-                                                </span>
+                            <Card key={session._id} className="border-destructive/20 overflow-hidden">
+                                <div className="p-6 space-y-6">
+                                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <BookOpen className="h-5 w-5 text-primary" />
+                                                <h3 className="text-lg font-semibold">{session.title}</h3>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <User className="h-4 w-4" />
+                                                <span>Subject: {session.subject || 'Not specified'}</span>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end">
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 mb-2">
-                                                Rejected
-                                            </span>
-                                            <span className="text-xs text-gray-500">
+                                        <div className="flex flex-col items-end gap-2">
+                                            <Badge variant="destructive">Rejected</Badge>
+                                            <span className="text-xs text-muted-foreground">
                                                 Updated: {formatDate(session.updatedAt)}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {session.rejectionReason && (
-                                            <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                                                <div className="flex items-center mb-2">
-                                                    <FiAlertTriangle className="text-red-500 mr-2" />
-                                                    <h3 className="font-semibold text-red-800">Rejection Reason</h3>
+                                            <Card className="border-destructive/20 bg-destructive/5 p-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                                                    <h4 className="font-medium text-destructive">Rejection Reason</h4>
                                                 </div>
-                                                <p className="text-gray-700 whitespace-pre-wrap">
+                                                <p className="text-sm whitespace-pre-wrap">
                                                     {session.rejectionReason}
                                                 </p>
-                                            </div>
+                                            </Card>
                                         )}
 
                                         {session.feedback && (
-                                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                                                <div className="flex items-center mb-2">
-                                                    <FiInfo className="text-blue-500 mr-2" />
-                                                    <h3 className="font-semibold text-blue-800">Admin Feedback</h3>
+                                            <Card className="border-primary/20 bg-primary/5 p-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Info className="h-4 w-4 text-primary" />
+                                                    <h4 className="font-medium text-primary">Admin Feedback</h4>
                                                 </div>
-                                                <p className="text-gray-700 whitespace-pre-wrap">
+                                                <p className="text-sm whitespace-pre-wrap">
                                                     {session.feedback}
                                                 </p>
-                                            </div>
+                                            </Card>
                                         )}
                                     </div>
 
-                                    <div className="mt-6 pt-6 border-t border-gray-200">
-                                        <h3 className="font-medium text-gray-700 mb-3">Session Details</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="flex items-center">
-                                                <FiCalendar className="text-gray-500 mr-2" />
-                                                <span className="text-sm text-gray-600">
-                                                    Dates: {formatDate(session.classStartDate)} - {formatDate(session.classEndDate)}
-                                                </span>
+                                    <div className="pt-4 border-t">
+                                        <h4 className="font-medium mb-3">Session Details</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Calendar className="h-4 w-4" />
+                                                <span>Dates: {formatDate(session.classStartDate)} - {formatDate(session.classEndDate)}</span>
                                             </div>
-                                            <div className="flex items-center">
-                                                <FiClock className="text-gray-500 mr-2" />
-                                                <span className="text-sm text-gray-600">
-                                                    Duration: {session.duration} days
-                                                </span>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Clock className="h-4 w-4" />
+                                                <span>Duration: {session.duration} days</span>
                                             </div>
-                                            <div className="flex items-center">
-                                                <FiCalendar className="text-gray-500 mr-2" />
-                                                <span className="text-sm text-gray-600">
-                                                    Submitted: {formatDate(session.createdAt)}
-                                                </span>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Calendar className="h-4 w-4" />
+                                                <span>Submitted: {formatDate(session.createdAt)}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Card>
                         ))}
                     </div>
                 )}
@@ -208,33 +214,38 @@ const ViewRejectedFeedBacks = () => {
 
             {/* Sessions without feedback */}
             {sessionsWithoutFeedback.length > 0 && (
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                        <FiInfo className="mr-2 text-yellow-500" />
-                        Other Rejected Sessions ({sessionsWithoutFeedback.length})
-                    </h2>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                        <p className="text-yellow-700 mb-4">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                        <Info className="h-5 w-5 text-yellow-500" />
+                        <h2 className="text-xl font-semibold">Other Rejected Sessions</h2>
+                        <Badge variant="outline" className="ml-2">
+                            {sessionsWithoutFeedback.length}
+                        </Badge>
+                    </div>
+                    
+                    <Card className="border-yellow-200/50 bg-yellow-50/50 dark:bg-yellow-900/10 p-6">
+                        <p className="text-yellow-800 dark:text-yellow-200 mb-4">
                             The following sessions were rejected but don't have specific feedback yet.
                         </p>
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             {sessionsWithoutFeedback.map(session => (
-                                <div key={session._id} className="bg-white p-4 rounded border border-gray-200">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-medium text-gray-800">{session.title}</h3>
-                                            <p className="text-sm text-gray-500">
+                                <Card key={session._id} className="p-4 hover:bg-muted/50 transition-colors">
+                                    <div className="flex justify-between items-center">
+                                        <div className="space-y-1">
+                                            <h3 className="font-medium">{session.title}</h3>
+                                            <p className="text-sm text-muted-foreground">
                                                 Rejected on: {formatDate(session.updatedAt)}
                                             </p>
                                         </div>
-                                        <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                                            No feedback
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="secondary">No feedback</Badge>
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                        </div>
                                     </div>
-                                </div>
+                                </Card>
                             ))}
                         </div>
-                    </div>
+                    </Card>
                 </div>
             )}
         </div>
