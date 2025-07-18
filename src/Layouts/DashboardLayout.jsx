@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Link, Outlet } from "react-router";
 import { HomeIcon, LogOutIcon, MenuIcon, ChevronDownIcon } from "lucide-react";
 import DashboardLinks from "../Pages/Dashboard/DashboardLinks";
-import { Button } from "../components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +13,8 @@ import {
 import useAuth from "../Hooks/useAuth";
 import useUserRole from "../Hooks/useUserRole";
 import { toast } from "sonner";
+import { Button } from "../Components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../Components/ui/avatar";
 
 const DashboardLayout = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,7 +32,7 @@ const DashboardLayout = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-muted/40">
+    <div className="min-h-screen w-full ">
       {/* Mobile Header */}
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
         <Sheet>

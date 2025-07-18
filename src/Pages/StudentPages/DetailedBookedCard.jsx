@@ -3,8 +3,45 @@ import { useParams, useNavigate } from "react-router";
 import useAxiosSecure from "../../Hooks/useAxiosSecure";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../Hooks/useAuth";
-import Swal from "sweetalert2";
-import { FiArrowLeft, FiStar, FiCalendar, FiUser, FiClock } from "react-icons/fi";
+import { toast } from "sonner";
+import { 
+  FiArrowLeft, 
+  FiStar, 
+  FiCalendar, 
+  FiUser, 
+  FiClock,
+  FiCheckCircle,
+  FiXCircle,
+  FiInfo,
+  FiEdit2,
+  FiTrash2,
+  FiPlus
+} from "react-icons/fi";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+  CardDescription,
+} from "../../Components/ui/card";
+import { Button } from "../../Components/ui/button";
+import { Badge } from "../../Components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "../../Components/ui/avatar";
+import { Textarea } from "../../Components/ui/textarea";
+import { Skeleton } from "../../Components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../Components/ui/alert-dialog";
+import { ScrollArea } from "../../Components/ui/scroll-area";
+import { Separator } from "../../Components/ui/separator";
 
 const DetailedBookedCard = () => {
   const { id } = useParams();
@@ -15,8 +52,8 @@ const DetailedBookedCard = () => {
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(5);
   const [userReview, setUserReview] = useState(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  // Enhanced date formatter
   const formatDate = (dateString) => {
     if (!dateString || dateString === "Invalid Date") return "Not scheduled";
     
@@ -27,7 +64,9 @@ const DetailedBookedCard = () => {
       return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
-        day: "numeric"
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
       });
     } catch {
       return "Not scheduled";
@@ -39,7 +78,6 @@ const DetailedBookedCard = () => {
     queryKey: ["booked-session", id],
     queryFn: async () => {
       const res = await axiosSecure.get(`/booked-sessions/${id}`);
-      console.log("Booked session data:", res.data); // Debug log
       return res.data;
     },
   });
@@ -70,7 +108,9 @@ const DetailedBookedCard = () => {
     e.preventDefault();
     
     if (!user?.email) {
-      Swal.fire("Login Required", "Please login to submit a review", "error");
+      toast.error("Login Required", {
+        description: "Please login to submit a review",
+      });
       return;
     }
 
@@ -94,84 +134,168 @@ const DetailedBookedCard = () => {
       }
 
       if (result.data.success) {
-        Swal.fire({
-          icon: "success",
-          title: userReview ? "Review Updated!" : "Review Submitted!",
-          timer: 1500,
-          showConfirmButton: false
-        });
+        toast.success(userReview ? "Review Updated!" : "Review Submitted!");
         refetchReviews();
       }
     } catch (error) {
-      Swal.fire("Error", error.response?.data?.message || "Failed to submit review", "error");
+      toast.error("Error", {
+        description: error.response?.data?.message || "Failed to submit review",
+      });
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    try {
+      const result = await axiosSecure.delete(`/reviews/${userReview._id}`);
+      if (result.data.success) {
+        toast.success("Review Deleted");
+        setReviewText("");
+        setRating(5);
+        setUserReview(null);
+        refetchReviews();
+      }
+    } catch (error) {
+      toast.error("Error", {
+        description: error.response?.data?.message || "Failed to delete review",
+      });
+    } finally {
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const renderStatusBadge = () => {
+    if (!bookedSession?.status) return null;
+
+    switch (bookedSession.status.toLowerCase()) {
+      case 'completed':
+        return (
+          <Badge className="gap-1.5 bg-green-500 hover:bg-green-600">
+            <FiCheckCircle className="h-3.5 w-3.5" />
+            <span>Completed</span>
+          </Badge>
+        );
+      case 'cancelled':
+      case 'rejected':
+        return (
+          <Badge className="gap-1.5 bg-red-500 hover:bg-red-600">
+            <FiXCircle className="h-3.5 w-3.5" />
+            <span>{bookedSession.status.charAt(0).toUpperCase() + bookedSession.status.slice(1)}</span>
+          </Badge>
+        );
+      case 'registered':
+        return (
+          <Badge className="gap-1.5 bg-blue-500 hover:bg-blue-600">
+            <FiCheckCircle className="h-3.5 w-3.5" />
+            <span>Registered</span>
+          </Badge>
+        );
+      case 'upcoming':
+        return (
+          <Badge className="gap-1.5 bg-yellow-500 hover:bg-yellow-600">
+            <FiInfo className="h-3.5 w-3.5" />
+            <span>Upcoming</span>
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="gap-1.5">
+            <FiInfo className="h-3.5 w-3.5" />
+            <span>{bookedSession.status.charAt(0).toUpperCase() + bookedSession.status.slice(1)}</span>
+          </Badge>
+        );
     }
   };
 
   if (isLoading) return (
-    <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <Skeleton className="h-10 w-24" />
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-1/2" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+      </div>
+      <Skeleton className="h-96" />
     </div>
   );
 
   if (error) return (
-    <div className="text-center py-20">
-      <h2 className="text-2xl font-bold text-gray-700">Error loading session</h2>
-      <button 
-        onClick={() => navigate(-1)} 
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Go Back
-      </button>
+    <div className="max-w-6xl mx-auto px-4 py-20 text-center">
+      <Card className="mx-auto max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">Error loading session</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Could not load the session details</p>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button onClick={() => navigate(-1)} variant="outline">
+            <FiArrowLeft className="mr-2" /> Go Back
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 
   if (!bookedSession) return (
-    <div className="text-center py-20">
-      <h2 className="text-2xl font-bold text-gray-700">Session not found</h2>
-      <button 
-        onClick={() => navigate(-1)} 
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Go Back
-      </button>
+    <div className="max-w-6xl mx-auto px-4 py-20 text-center">
+      <Card className="mx-auto max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">Session not found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">The requested session could not be found</p>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button onClick={() => navigate(-1)} variant="outline">
+            <FiArrowLeft className="mr-2" /> Go Back
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       {/* Back button */}
-      <button 
+      <Button 
         onClick={() => navigate(-1)} 
-        className="flex items-center text-blue-600 hover:text-blue-800 mb-8 transition-colors"
+        variant="ghost" 
+        className="px-0 hover:bg-transparent"
       >
         <FiArrowLeft className="mr-2" /> Back to Sessions
-      </button>
+      </Button>
 
       {/* Session Details Card */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 border border-gray-100">
-        <div className="p-6 md:p-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">{bookedSession.title}</h1>
-          
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">{bookedSession.title}</CardTitle>
+          <CardDescription>Session details and information</CardDescription>
+        </CardHeader>
+        
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Session Info */}
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <div className="bg-blue-50 p-3 rounded-lg mr-4">
-                  <FiUser className="text-blue-600 text-xl" />
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/10 p-3 rounded-lg">
+                  <FiUser className="text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-700">Tutor</h3>
-                  <p className="text-gray-600">{bookedSession.tutorName || "Not specified"}</p>
+                  <h3 className="font-medium text-sm text-muted-foreground">Tutor</h3>
+                  <p className="text-foreground">{bookedSession.tutorName || "Not specified"}</p>
                 </div>
               </div>
               
-              <div className="flex items-start">
-                <div className="bg-blue-50 p-3 rounded-lg mr-4">
-                  <FiCalendar className="text-blue-600 text-xl" />
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/10 p-3 rounded-lg">
+                  <FiCalendar className="text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-700">Class Dates</h3>
-                  <p className="text-gray-600">
+                  <h3 className="font-medium text-sm text-muted-foreground">Class Dates</h3>
+                  <p className="text-foreground">
                     {formatDate(bookedSession.classStartDate)} - {formatDate(bookedSession.classEndDate)}
                   </p>
                 </div>
@@ -179,88 +303,84 @@ const DetailedBookedCard = () => {
             </div>
             
             {/* Booking Info */}
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <div className="bg-blue-50 p-3 rounded-lg mr-4">
-                  <FiClock className="text-blue-600 text-xl" />
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/10 p-3 rounded-lg">
+                  <FiClock className="text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-700">Duration</h3>
-                  <p className="text-gray-600">
-                    {bookedSession.duration ? `${bookedSession.duration} days` : "Not specified"}
+                  <h3 className="font-medium text-sm text-muted-foreground">Duration</h3>
+                  <p className="text-foreground">
+                    {bookedSession.duration ? `${bookedSession.duration}` : "Not specified"}
                   </p>
                 </div>
               </div>
               
-              <div className="flex items-start">
-                <div className="bg-blue-50 p-3 rounded-lg mr-4">
-                  <FiCalendar className="text-blue-600 text-xl" />
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/10 p-3 rounded-lg">
+                  <FiInfo className="text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-700">Booking Status</h3>
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    bookedSession.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    bookedSession.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                    bookedSession.status === 'registered' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {bookedSession.status || "unknown"}
-                  </span>
+                  <h3 className="font-medium text-sm text-muted-foreground">Booking Status</h3>
+                  <div className="mt-1">
+                    {renderStatusBadge()}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Additional booking info */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-start">
-              <div className="bg-blue-50 p-3 rounded-lg mr-4">
-                <FiCalendar className="text-blue-600 text-xl" />
+          <div className="mt-8 pt-6 border-t">
+            <div className="flex items-start gap-4">
+              <div className="bg-primary/10 p-3 rounded-lg">
+                <FiCalendar className="text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-700">Registration Date</h3>
-                <p className="text-gray-600">
+                <h3 className="font-medium text-sm text-muted-foreground">Registration Date</h3>
+                <p className="text-foreground">
                   {formatDate(bookedSession.registrationDate)}
                 </p>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Review Section */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-        <div className="p-6 md:p-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Reviews</h2>
-          
+      <Card>
+        <CardHeader>
+          <CardTitle>Reviews</CardTitle>
+          <CardDescription>Share your experience with this session</CardDescription>
+        </CardHeader>
+        
+        <CardContent>
           {/* Review Form */}
           {user?.email && (
-            <form onSubmit={handleReviewSubmit} className="mb-8 pb-6 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-700 mb-4">
+            <form onSubmit={handleReviewSubmit} className="mb-8 pb-6 border-b">
+              <h3 className="text-lg font-medium mb-4">
                 {userReview ? "Edit Your Review" : "Share Your Experience"}
               </h3>
               
               <div className="mb-4">
-                <label className="block font-medium text-gray-700 mb-2">Your Rating</label>
+                <label className="block font-medium text-sm text-muted-foreground mb-2">Your Rating</label>
                 <div className="flex space-x-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       type="button"
                       key={star}
                       onClick={() => setRating(star)}
-                      className={`text-2xl ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                      className={`text-2xl ${rating >= star ? 'text-yellow-400' : 'text-muted'}`}
                     >
-                      <FiStar className="fill-current" />
+                      <FiStar className={rating >= star ? "fill-current" : ""} />
                     </button>
                   ))}
                 </div>
               </div>
               
               <div className="mb-4">
-                <label className="block font-medium text-gray-700 mb-2">Your Review</label>
-                <textarea
-                  rows="4"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                <label className="block font-medium text-sm text-muted-foreground mb-2">Your Review</label>
+                <Textarea
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Share your thoughts about this session..."
@@ -268,60 +388,93 @@ const DetailedBookedCard = () => {
                 />
               </div>
               
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {userReview ? "Update Review" : "Submit Review"}
-              </button>
+              <div className="flex gap-2">
+                <Button type="submit">
+                  {userReview ? "Update Review" : "Submit Review"}
+                </Button>
+                {userReview && (
+                  <>
+                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                      <Button 
+                        type="button" 
+                        variant="destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                      >
+                        <FiTrash2 className="mr-2" /> Delete
+                      </Button>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your review.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleDeleteReview}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+              </div>
             </form>
           )}
 
           {/* Reviews List */}
           <div>
             {reviews.length > 0 ? (
-              reviews.map((review) => (
-                <div key={review._id} className="mb-6 pb-6 border-b border-gray-100 last:border-0">
-                  <div className="flex items-start space-x-4">
-                    <img 
-                      src={review.studentPhotoUrl || "/default-avatar.png"} 
-                      alt={review.studentName}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-gray-800">{review.studentName}</h4>
-                          <div className="flex items-center mt-1">
-                            {[...Array(5)].map((_, i) => (
-                              <FiStar 
-                                key={i} 
-                                className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                              />
-                            ))}
+              <ScrollArea className="h-[400px]">
+                {reviews.map((review) => (
+                  <div key={review._id} className="mb-6 pb-6">
+                    <div className="flex items-start gap-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={review.studentPhotoUrl} />
+                        <AvatarFallback>
+                          {review.studentName?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">{review.studentName}</h4>
+                            <div className="flex items-center mt-1">
+                              {[...Array(5)].map((_, i) => (
+                                <FiStar 
+                                  key={i} 
+                                  className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-muted'}`}
+                                />
+                              ))}
+                            </div>
                           </div>
+                          <span className="text-sm text-muted-foreground">
+                            {formatDate(review.updatedAt || review.createdAt)}
+                          </span>
                         </div>
-                        <span className="text-sm text-gray-500">
-                          {formatDate(review.updatedAt || review.createdAt)}
-                        </span>
+                        <p className="mt-2 text-foreground">{review.reviewText}</p>
                       </div>
-                      <p className="mt-2 text-gray-600">{review.reviewText}</p>
                     </div>
+                    <Separator className="mt-6" />
                   </div>
-                </div>
-              ))
+                ))}
+              </ScrollArea>
             ) : (
               <div className="text-center py-8">
-                <div className="text-gray-400 mb-4">
+                <div className="text-muted-foreground mb-4">
                   <FiStar className="w-12 h-12 mx-auto opacity-50" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-600">No reviews yet</h3>
-                <p className="text-gray-500 mt-1">Be the first to share your experience!</p>
+                <h3 className="text-lg font-medium">No reviews yet</h3>
+                <p className="text-muted-foreground mt-1">Be the first to share your experience!</p>
               </div>
             )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
