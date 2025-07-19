@@ -16,12 +16,13 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "../../Components/ui/select";
-import { Loader2, UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud, CheckCircle2, XCircle } from "lucide-react";
 
 const UploadMaterial = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
   const [isUploading, setIsUploading] = useState(false);
+  const [imageSelected, setImageSelected] = useState(false);
 
   const {
     register,
@@ -40,6 +41,15 @@ const UploadMaterial = () => {
       return res.data;
     },
   });
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageSelected(true);
+    } else {
+      setImageSelected(false);
+    }
+  };
 
   const onSubmit = async (data) => {
     setIsUploading(true);
@@ -69,6 +79,7 @@ const UploadMaterial = () => {
         if (uploadRes.data.insertedId) {
           toast.success("Material uploaded successfully", { id: toastId });
           reset();
+          setImageSelected(false);
         } else {
           toast.error("Failed to save material", { id: toastId });
         }
@@ -147,10 +158,7 @@ const UploadMaterial = () => {
             id="link"
             {...register("link", { 
               required: "Google Drive link is required",
-              pattern: {
-                value: /^(https?:\/\/)?(www\.)?drive\.google\.com\/.+/,
-                message: "Please enter a valid Google Drive link"
-              }
+              
             })}
             placeholder="https://drive.google.com/..."
             className={errors.link ? "border-destructive" : ""}
@@ -165,14 +173,18 @@ const UploadMaterial = () => {
           <div className="flex items-center justify-center w-full">
             <label
               htmlFor="image"
-              className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer ${
+              className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer relative ${
                 errors.image ? "border-destructive" : "border-border hover:border-primary"
               }`}
             >
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
+                {imageSelected ? (
+                  <CheckCircle2 className="w-8 h-8 mb-2 text-green-500" />
+                ) : (
+                  <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
+                )}
                 <p className="mb-2 text-sm text-muted-foreground">
-                  <span className="font-semibold">Click to upload</span> or drag and drop
+                  {imageSelected ? "Image selected" : "Click to upload"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   PNG, JPG (MAX. 5MB)
@@ -190,9 +202,15 @@ const UploadMaterial = () => {
                     acceptedFormats: files => 
                       ['image/jpeg', 'image/png'].includes(files[0]?.type) || 
                       "Only JPEG/PNG images"
-                  }
+                  },
+                  onChange: handleImageChange
                 })}
               />
+              {imageSelected && (
+                <div className="absolute top-2 right-2 bg-green-100 rounded-full p-1">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                </div>
+              )}
             </label>
           </div>
           {errors.image && (

@@ -41,19 +41,21 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      const { email, password } = data;
+      const email = data.email.toLowerCase(); // ✅ Normalize email
+      const password = data.password;
+
       const res = await signInUser(email, password);
       const user = res.user;
 
       // ✅ JWT Token Set via cookie
       await axiosSecure.post(
         "/jwt",
-        { email: user.email },
+        { email: user.email.toLowerCase() }, // ✅ Ensure lowercase
         { withCredentials: true }
       );
 
       // ✅ Optional: Fetch Role to ensure it exists
-      await axiosSecure.get(`/users/${user.email}/role`, {
+      await axiosSecure.get(`/users/${user.email.toLowerCase()}/role`, {
         withCredentials: true,
       });
 
@@ -67,27 +69,31 @@ const Login = () => {
   };
 
   const handleGoogleSignIn = async () => {
-  setIsGoogleLoading(true);
-  try {
-    const res = await createUserWithGoogle(provider);
-    const user = res.user;
+    setIsGoogleLoading(true);
+    try {
+      const res = await createUserWithGoogle(provider);
+      const user = res.user;
 
-    // ✅ JWT Token Set via cookie
-    await axiosSecure.post("/jwt", { email: user.email }, { withCredentials: true });
+      // ✅ JWT Token Set via cookie
+      await axiosSecure.post(
+        "/jwt",
+        { email: user.email },
+        { withCredentials: true }
+      );
 
-    // ✅ Optional: Fetch Role to ensure it's assigned
-    await axiosSecure.get(`/users/${user.email}/role`, { withCredentials: true });
+      // ✅ Optional: Fetch Role to ensure it's assigned
+      await axiosSecure.get(`/users/${user.email}/role`, {
+        withCredentials: true,
+      });
 
-    toast.success("Logged in with Google");
-    navigate(from, { replace: true });
-
-  } catch (error) {
-    toast.error(error.message || "Google login failed");
-  } finally {
-    setIsGoogleLoading(false);
-  }
-};
-
+      toast.success("Logged in with Google");
+      navigate(from, { replace: true });
+    } catch (error) {
+      toast.error(error.message || "Google login failed");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex">

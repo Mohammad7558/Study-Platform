@@ -52,7 +52,7 @@ const ViewAllStudyMet = () => {
     const { data: bookedSessions = [], isLoading: sessionsLoading, error: sessionsError } = useQuery({
         queryKey: ['bookedSessions', user?.email],
         queryFn: async () => {
-            const res = await axiosSecure.get(`/booked-sessions?email=${user?.email}`);
+            const res = await axiosSecure.get(`/booked-sessions?email=${user?.email}`); 
             return res.data || [];
         },
         enabled: !!user?.email

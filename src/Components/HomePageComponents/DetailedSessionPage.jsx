@@ -752,7 +752,7 @@ const DetailedSessionPage = () => {
         open={paymentStatus === "success"}
         onOpenChange={(open) => !open && setPaymentStatus(null)}
       >
-        <DialogContent className="sm:max-w-[450px] text-center">
+        <DialogContent className="sm:max-w-[470px] text-center">
           <div className="mx-auto flex flex-col items-center justify-center space-y-4">
             <div className="rounded-full bg-green-100 p-4">
               <CheckIcon className="h-8 w-8 text-green-600" />
@@ -781,7 +781,7 @@ const DetailedSessionPage = () => {
                   setPaymentStatus(null);
                   navigate("/dashboard/booked-sessions");
                 }}
-                className="w-full"
+                className=""
               >
                 View My Sessions
               </Button>
@@ -791,7 +791,7 @@ const DetailedSessionPage = () => {
                   setPaymentStatus(null);
                   navigate("/all-sessions");
                 }}
-                className="w-full"
+                className=""
               >
                 Browse More Sessions
               </Button>

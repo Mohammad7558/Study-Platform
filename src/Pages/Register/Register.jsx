@@ -3,7 +3,15 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Link, useLocation, useNavigate } from "react-router";
 import { FcGoogle } from "react-icons/fc";
-import { FiEye, FiEyeOff, FiUpload, FiX, FiUser, FiMail, FiLock } from "react-icons/fi";
+import {
+  FiEye,
+  FiEyeOff,
+  FiUpload,
+  FiX,
+  FiUser,
+  FiMail,
+  FiLock,
+} from "react-icons/fi";
 import { GoogleAuthProvider } from "firebase/auth";
 import { Loader2 } from "lucide-react";
 
@@ -113,7 +121,11 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    const { email, password, name } = data;
+
+    // ✅ Step 1: lowercase the email
+    const name = data.name;
+    const password = data.password;
+    const email = data.email.toLowerCase();
 
     try {
       let photoUrl = "";
@@ -130,7 +142,7 @@ const Register = () => {
 
       const userInfo = {
         name,
-        email,
+        email, // ✅ already lowercase
         photoUrl: photoUrl || "",
         role: "student",
         created_at: new Date().toISOString(),
@@ -220,7 +232,10 @@ const Register = () => {
               </div>
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
                   {/* Profile Image Upload */}
                   <div className="flex flex-col items-center gap-4">
                     <div className="relative group">
@@ -380,10 +395,7 @@ const Register = () => {
 
             <div className="text-center text-sm mt-4 pb-6">
               Already have an account?{" "}
-              <Link
-                to="/login"
-                className="underline"
-              >
+              <Link to="/login" className="underline">
                 Log in
               </Link>
             </div>
