@@ -6,7 +6,7 @@ A powerful MERN Stack-based web application built for seamless online collaborat
 
 ## 🔴 Live Site
 
-🌐 **Live URL:** [https://the-last-dance-1227f.web.app/]
+🌐 **Live URL:** [https://the-last-dance-1227f.web.app/](https://the-last-dance-1227f.web.app/)
 
 🧪 **Admin Test Credentials:**
 - Email: `admin@gmail.com`
