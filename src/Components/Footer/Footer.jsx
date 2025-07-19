@@ -17,7 +17,7 @@ const Footer = () => {
           
           {/* Brand Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold tracking-tight">MyWebsite</h3>
+            <h3 className="text-lg font-semibold tracking-tight">EduSphere</h3>
             <p className="text-sm text-muted-foreground">
               Building the next generation of web experiences
             </p>

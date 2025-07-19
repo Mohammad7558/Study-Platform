@@ -33,7 +33,7 @@ const AuthProvider = ({ children }) => {
   const logOut = async () => {
     setLoading(true);
     await axios.post(
-      "http://localhost:5000/logout",
+      "https://assignment-12-server-side-swart.vercel.app/logout",
       {},
       { withCredentials: true }
     );
@@ -53,12 +53,12 @@ const AuthProvider = ({ children }) => {
       try {
         // First check if user exists in MongoDB
         const userExists = await axios.get(
-          `http://localhost:5000/users/${currentUser.email}`
+          `https://assignment-12-server-side-swart.vercel.app/users/${currentUser.email}`
         );
         
         if (userExists.data) {
           await axios.post(
-            "http://localhost:5000/jwt",
+            "https://assignment-12-server-side-swart.vercel.app/jwt",
             { email: currentUser.email },
             { withCredentials: true }
           );
