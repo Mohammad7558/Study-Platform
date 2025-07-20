@@ -23,7 +23,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "../../Components/ui/card";
 import { Input } from "../../Components/ui/input";
 import { Button } from "../../Components/ui/button";
@@ -35,11 +34,16 @@ import {
   FormLabel,
   FormMessage,
 } from "../../Components/ui/form";
-import { Separator } from "../../Components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../Components/ui/select";
 
 const Register = () => {
-  const { createUserWithEmail, updateUser, setUser, createUserWithGoogle } =
-    useAuth();
+  const { createUserWithEmail, updateUser, setUser, createUserWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location?.state?.from?.pathname || "/";
@@ -58,6 +62,7 @@ const Register = () => {
       name: "",
       email: "",
       password: "",
+      role: "student",
     },
   });
 
@@ -79,9 +84,7 @@ const Register = () => {
 
     setImageFile(file);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
@@ -93,23 +96,16 @@ const Register = () => {
 
   const uploadImageToImgBB = async (file) => {
     if (!file) return null;
-
     setIsUploading(true);
     try {
       const formData = new FormData();
       formData.append("image", file);
-
-      const res = await fetch(
-        `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST",
+        body: formData,
+      });
       const data = await res.json();
       if (!data.success) throw new Error("Image upload failed");
-
       return data.data.url;
     } catch (err) {
       toast.error("Failed to upload image");
@@ -121,11 +117,10 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-
-    // ✅ Step 1: lowercase the email
     const name = data.name;
     const password = data.password;
     const email = data.email.toLowerCase();
+    const role = data.role.toLowerCase();
 
     try {
       let photoUrl = "";
@@ -142,9 +137,9 @@ const Register = () => {
 
       const userInfo = {
         name,
-        email, // ✅ already lowercase
+        email,
         photoUrl: photoUrl || "",
-        role: "student",
+        role,
         created_at: new Date().toISOString(),
       };
 
@@ -175,11 +170,7 @@ const Register = () => {
       };
 
       await axiosInstance.post("/users", userInfo);
-      await axiosInstance.post(
-        "/jwt",
-        { email: user.email },
-        { withCredentials: true }
-      );
+      await axiosInstance.post("/jwt", { email: user.email }, { withCredentials: true });
 
       toast.success("Google account linked!");
       navigate(from, { replace: true });
@@ -192,18 +183,17 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Form */}
+      {/* Left Side */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <Card className="border-0 lg:shadow-none shadow-xl lg:p-0 px-3">
-            <CardHeader className="space-y-1">
+            <CardHeader>
               <CardTitle className="text-4xl font-bold text-center">
                 Sign up
               </CardTitle>
             </CardHeader>
 
             <CardContent className="grid gap-4">
-              {/* Google Sign-In */}
               <Button
                 variant="outline"
                 className="w-full"
@@ -232,17 +222,11 @@ const Register = () => {
               </div>
 
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
-                >
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   {/* Profile Image Upload */}
                   <div className="flex flex-col items-center gap-4">
                     <div className="relative group">
-                      <label
-                        htmlFor="profile-upload"
-                        className="cursor-pointer"
-                      >
+                      <label htmlFor="profile-upload" className="cursor-pointer">
                         <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center transition-all group-hover:border-blue-500 group-hover:bg-gray-50">
                           {imagePreview ? (
                             <>
@@ -256,9 +240,7 @@ const Register = () => {
                               </div>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center">
-                              <FiUser className="text-gray-400 h-5 w-5" />
-                            </div>
+                            <FiUser className="text-gray-400 h-5 w-5" />
                           )}
                         </div>
                       </label>
@@ -281,7 +263,7 @@ const Register = () => {
                     </div>
                   </div>
 
-                  {/* Name Field */}
+                  {/* Name */}
                   <FormField
                     control={form.control}
                     name="name"
@@ -291,11 +273,7 @@ const Register = () => {
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input
-                              placeholder="Enter your full name"
-                              {...field}
-                              className="h-10 pl-10"
-                            />
+                            <Input {...field} placeholder="Enter your name" className="pl-10" />
                             <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                           </div>
                         </FormControl>
@@ -304,7 +282,7 @@ const Register = () => {
                     )}
                   />
 
-                  {/* Email Field */}
+                  {/* Email */}
                   <FormField
                     control={form.control}
                     name="email"
@@ -320,11 +298,7 @@ const Register = () => {
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input
-                              placeholder="your@email.com"
-                              {...field}
-                              className="h-10 pl-10"
-                            />
+                            <Input {...field} placeholder="your@email.com" className="pl-10" />
                             <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                           </div>
                         </FormControl>
@@ -333,7 +307,7 @@ const Register = () => {
                     )}
                   />
 
-                  {/* Password Field */}
+                  {/* Password */}
                   <FormField
                     control={form.control}
                     name="password"
@@ -341,7 +315,7 @@ const Register = () => {
                       required: "Password is required",
                       minLength: {
                         value: 6,
-                        message: "Password must be at least 6 characters",
+                        message: "At least 6 characters",
                       },
                     }}
                     render={({ field }) => (
@@ -350,22 +324,18 @@ const Register = () => {
                         <FormControl>
                           <div className="relative">
                             <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Create a password"
                               {...field}
-                              className="h-10 pl-10 pr-10"
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Create password"
+                              className="pl-10 pr-10"
                             />
                             <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                             <button
                               type="button"
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                              className="absolute right-3 top-1/2 -translate-y-1/2"
                               onClick={() => setShowPassword(!showPassword)}
                             >
-                              {showPassword ? (
-                                <FiEyeOff className="h-4 w-4" />
-                              ) : (
-                                <FiEye className="h-4 w-4" />
-                              )}
+                              {showPassword ? <FiEyeOff /> : <FiEye />}
                             </button>
                           </div>
                         </FormControl>
@@ -374,12 +344,33 @@ const Register = () => {
                     )}
                   />
 
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    className="w-full mt-2"
-                    disabled={isLoading || isUploading}
-                  >
+                  {/* Role Selector */}
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    rules={{ required: "Please select a role" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select your role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="student">Student</SelectItem>
+                            <SelectItem value="tutor">Tutor</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Submit */}
+                  <Button type="submit" className="w-full mt-2" disabled={isLoading || isUploading}>
                     {isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -403,7 +394,7 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Right Side - Sky Blue Background */}
+      {/* Right Side - Illustration */}
       <div className="hidden lg:flex lg:w-1/2 bg-sky-100 items-center justify-center p-12">
         <div className="text-center max-w-md">
           <img
@@ -411,12 +402,9 @@ const Register = () => {
             alt="Sign up illustration"
             className="w-full max-w-xs mx-auto mb-8"
           />
-          <h2 className="text-2xl font-bold text-sky-800 mb-4">
-            Join Our Community
-          </h2>
+          <h2 className="text-2xl font-bold text-sky-800 mb-4">Join Our Community</h2>
           <p className="text-sky-700">
-            Create your account and get access to all our premium features and
-            resources.
+            Create your account and get access to all our premium features and resources.
           </p>
         </div>
       </div>
