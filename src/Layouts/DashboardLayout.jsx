@@ -23,16 +23,16 @@ const DashboardLayout = () => {
 
   const handleLogOut = () => {
     logOut()
-    .then(() => {
-      toast.success('Log Out success')
-    })
-    .catch(error => {
-      console.log(error.message);
-    })
-  }
+      .then(() => {
+        toast.success("Log Out success");
+      })
+      .catch((error) => {
+        console.log(error.message);
+      });
+  };
 
   return (
-    <div className="min-h-screen w-full ">
+    <div className="min-h-screen w-full">
       {/* Mobile Header */}
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
         <Sheet>
@@ -48,8 +48,8 @@ const DashboardLayout = () => {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs">
-            <nav className="grid gap-6 text-lg font-medium px-5 pt-10">
-              <div className="flex items-center gap-4 p-2">
+            <nav className="grid gap-6 text-lg font-medium pl-4 pr-5 pt-10">
+              <div className="flex items-center gap-4 p-2 pr-5">
                 <Avatar>
                   <AvatarImage src={user?.photoURL || ""} />
                   <AvatarFallback>
@@ -74,14 +74,16 @@ const DashboardLayout = () => {
               </Link>
               <div className="text-xl font-bold text-primary">Dashboard</div>
               <DashboardLinks />
-              <Button
-                variant="destructive"
-                className="w-full gap-2"
-                onClick={handleLogOut}
-              >
-                <LogOutIcon className="h-4 w-4" />
-                Logout
-              </Button>
+              <div>
+                <Button
+                  variant="destructive"
+                  className="gap-2 w-auto"
+                  onClick={handleLogOut}
+                >
+                  <LogOutIcon className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
             </nav>
           </SheetContent>
         </Sheet>

@@ -20,7 +20,7 @@ const DashboardLinks = () => {
   if (loading) return <p className="text-center text-muted-foreground">Loading...</p>;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 px-4">
       <NavLink
         to="/dashboard"
         className={({ isActive }) =>

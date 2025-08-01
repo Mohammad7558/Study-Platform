@@ -197,7 +197,7 @@ const Sessions = () => {
   };
 
   return (
-    <div className="container py-10 mx-auto" ref={containerRef}>
+    <div className="container py-10 mx-auto px-5" ref={containerRef}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Study Sessions</h1>
