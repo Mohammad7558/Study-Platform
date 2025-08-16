@@ -20,8 +20,8 @@ import {
 
 export const ContactForm = () => {
   return (
-    <div className="lg:mt-32 mt-16">
-      <div className="container mx-auto px-4 py-12">
+    <div className="lg:mt-10 mt-14">
+      <div className="container mx-auto px-4 lg:py-12">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
             Contact Our Team

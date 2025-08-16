@@ -34,7 +34,7 @@ export function FAQ() {
   ];
 
   return (
-    <section className="w-full py-12 md:py-24 lg:pt-20 mt-16 bg-gray-50 dark:bg-gray-900">
+    <section className="w-full py-12 md:py-24 lg:pt-20 mt-5 bg-gray-50 dark:bg-gray-900 px-4 lg:px-0">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
