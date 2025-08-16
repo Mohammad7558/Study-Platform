@@ -4,6 +4,8 @@ A powerful MERN Stack-based web application built for seamless online collaborat
 
 ---
 
+![Collaborative Study Platform Screenshot](https://i.ibb.co.com/Qj64S9kt/the-last-dance-1227f-web-app.png)
+
 ## 🔴 Live Site
 
 🌐 **Live URL:** [https://the-last-dance-1227f.web.app/](https://the-last-dance-1227f.web.app/)
