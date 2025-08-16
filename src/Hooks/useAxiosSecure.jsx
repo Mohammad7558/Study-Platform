@@ -1,10 +1,10 @@
-import axios from 'axios';
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import useAuth from './useAuth';
+import axios from "axios";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import useAuth from "./useAuth";
 
 const axiosInstance = axios.create({
-  baseURL: 'https://assignment-12-server-side-swart.vercel.app',
+  baseURL: "http://localhost:5000",
   withCredentials: true,
 });
 
@@ -14,15 +14,15 @@ const useAxiosSecure = () => {
 
   useEffect(() => {
     const interceptor = axiosInstance.interceptors.response.use(
-      response => response,
-      async error => {
+      (response) => response,
+      async (error) => {
         if (error.response?.status === 401) {
           try {
             await logOut();
           } catch (logoutError) {
             console.error("Logout failed:", logoutError);
           }
-          navigate('/login');
+          navigate("/login");
         }
         return Promise.reject(error);
       }

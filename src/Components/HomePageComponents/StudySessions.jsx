@@ -72,7 +72,7 @@ const StudySessions = () => {
   );
 
   if (isError) return (
-    <div className="container mx-auto px-4 my-10 text-center py-20">
+    <div className="container mx-auto px-4 my-5 text-center py-10">
       <FiFrown className="mx-auto h-16 w-16 text-red-400 mb-4" />
       <h3 className="text-2xl font-medium text-gray-900 mb-2">Failed to load sessions</h3>
       <p className="text-gray-600 mb-6">We couldn't load the study sessions. Please try again.</p>
@@ -87,7 +87,7 @@ const StudySessions = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-5">
+    <div className="container mx-auto py-8 mt-5">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Study Sessions</h1>

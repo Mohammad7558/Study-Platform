@@ -32,7 +32,7 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await axios.post(
-        "https://assignment-12-server-side-swart.vercel.app/logout",
+        "http://localhost:5000/logout",
         {},
         { withCredentials: true }
       );
@@ -88,7 +88,7 @@ const Header = () => {
         <nav className="hidden lg:flex items-center space-x-2">{NavLinks}</nav>
 
         {/* Right - Auth/User/Buttons */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center">
           {user ? (
             <div className="hidden md:flex items-center space-x-4">
               <Link

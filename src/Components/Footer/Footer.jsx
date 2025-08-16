@@ -10,7 +10,7 @@ import { PhoneIcon } from 'lucide-react'
 const Footer = () => {
   return (
     <footer className="w-full border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container px-4 py-8 mx-auto">
+      <div className="container lg:px-0 px-4 py-8 mx-auto">
         
         {/* Main Footer Grid - Stack on mobile, 2 columns on small, 4 on large */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
