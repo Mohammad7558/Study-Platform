@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from "../../Components/ui/select";
 import { Input } from "../../Components/ui/input";
-import { Button } from "../../Components/ui/button";
-import { Skeleton } from "../../Components/ui/skeleton";
+import { Button } from "../../components/ui/button";
+import { Skeleton } from "../../components/ui/skeleton";
 
 const StudySessions = () => {
   const axiosSecure = useAxiosSecure();
@@ -87,7 +87,7 @@ const StudySessions = () => {
   );
 
   return (
-    <div className="container mx-auto py-8 mt-5">
+    <div className="container mx-auto py-8 mt-5 lg:px-0 px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Study Sessions</h1>

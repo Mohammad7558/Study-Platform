@@ -32,7 +32,7 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await axios.post(
-        "http://localhost:5000/logout",
+        "https://assignment-12-server-side-swart.vercel.app/logout",
         {},
         { withCredentials: true }
       );
