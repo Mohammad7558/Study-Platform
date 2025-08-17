@@ -321,52 +321,6 @@ const AdminDashboard = () => {
         </Card>
 
         {/* Recent Bookings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FiCreditCard className="h-5 w-5" />
-              Recent Bookings
-            </CardTitle>
-            <CardDescription>Latest student bookings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activitiesLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : (
-              <Table>
-                <TableBody>
-                  {recentActivities?.recentBookings?.map((booking) => (
-                    <TableRow key={booking._id}>
-                      <TableCell className="font-medium">{booking.sessionId?.slice(0, 6)}...</TableCell>
-                      <TableCell>
-                        <StatusBadge status={booking.status || 'completed'} />
-                      </TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">
-                        {formatDate(booking.bookingDate)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(!recentActivities?.recentBookings || recentActivities.recentBookings.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground">
-                        No recent bookings
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <Button variant="ghost" size="sm">
-              View All Bookings
-            </Button>
-          </CardFooter>
-        </Card>
 
         {/* Recent Payments */}
         <Card>
