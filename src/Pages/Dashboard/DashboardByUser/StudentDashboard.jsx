@@ -41,7 +41,6 @@ const StudentDashboard = () => {
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [recentPerformance, setRecentPerformance] = useState([]);
   const [recentNotes, setRecentNotes] = useState([]);
-  const [studyMaterials, setStudyMaterials] = useState([]);
 
   // Fetch all dashboard data
   useEffect(() => {
@@ -57,7 +56,6 @@ const StudentDashboard = () => {
           upcomingResponse,
           performanceResponse,
           notesResponse,
-          materialsResponse,
         ] = await Promise.all([
           axiosSecure.get("/student/dashboard-stats"),
           axiosSecure.get("/student/ongoing-sessions"),
@@ -72,7 +70,6 @@ const StudentDashboard = () => {
         setUpcomingSessions(upcomingResponse.data);
         setRecentPerformance(performanceResponse.data);
         setRecentNotes(notesResponse.data);
-        setStudyMaterials(materialsResponse.data);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data. Please try again.");
@@ -259,10 +256,7 @@ const StudentDashboard = () => {
           </CardContent>
           <CardFooter>
             <Link to="/dashboard/booked-sessions">
-              <Button
-                variant="ghost"
-                className="w-full"
-              >
+              <Button variant="ghost" className="w-full">
                 View All Sessions
               </Button>
             </Link>
@@ -389,109 +383,19 @@ const StudentDashboard = () => {
             )}
           </CardContent>
           <CardFooter>
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => (window.location.href = "/dashboard/create-note")}
-            >
-              View All Notes
-            </Button>
+            <Link to='/dashboard/manage-notes'>
+              <Button
+                variant="ghost"
+                className="w-full"
+              >
+                View All Notes
+              </Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
 
       {/* Study Materials Section */}
-      {studyMaterials.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Recent Study Materials
-            </CardTitle>
-            <CardDescription>
-              Materials from your enrolled sessions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {studyMaterials.slice(0, 6).map((material) => (
-                <div
-                  key={material._id}
-                  className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-8 w-8 text-blue-500" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{material.title}</h4>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {material.sessionTitle}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {new Date(material.uploadDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  {material.link && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 w-full"
-                      onClick={() => window.open(material.link, "_blank")}
-                    >
-                      View Material
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() => (window.location.href = "/all-sessions")}
-            >
-              <BookOpen className="h-6 w-6" />
-              <span>Browse Sessions</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() => (window.location.href = "/dashboard/create-note")}
-            >
-              <BookmarkIcon className="h-6 w-6" />
-              <span>Create Note</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() =>
-                (window.location.href = "/dashboard/booked-sessions")
-              }
-            >
-              <Calendar className="h-6 w-6" />
-              <span>My Sessions</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-20 flex flex-col gap-2"
-              onClick={() => (window.location.href = "/all-tutor")}
-            >
-              <Users className="h-6 w-6" />
-              <span>Find Tutors</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
