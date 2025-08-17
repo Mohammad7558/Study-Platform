@@ -30,6 +30,7 @@ import AdminRoutes from "./AdminRoutes";
 import PrivateRouters from "./PrivateRouters";
 import StudentRoutes from "./StudentRoutes";
 import TutorRoutes from "./TutorRoutes";
+import MyProfile from "../Pages/MyProfile/MyProfile";
 
 export const router = createBrowserRouter([
   {
@@ -102,6 +103,10 @@ export const router = createBrowserRouter([
       {
         path: "",
         element: <Dashboard />,
+      },
+      {
+        path: 'my-profile',
+        element: <MyProfile/>
       },
       //---------- tutor Protected Routes------------//
       {
