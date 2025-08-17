@@ -1,175 +1,497 @@
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../Components/ui/card';
-import { BookOpen, Calendar, Clock, Award, BarChart2, FileText } from 'lucide-react';
-import { Progress } from '../../../Components/ui/progress';
-import { Button } from '../../../Components/ui/button';
-import useAuth from '../../../Hooks/useAuth';
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "../../../Components/ui/card";
+import {
+  BookOpen,
+  Calendar,
+  Clock,
+  Award,
+  BarChart2,
+  FileText,
+  Users,
+  BookmarkIcon,
+  TrendingUp,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { Progress } from "../../../Components/ui/progress";
+import { Button } from "../../../Components/ui/button";
+import { Alert, AlertDescription } from "../../../Components/ui/alert";
+import useAuth from "../../../Hooks/useAuth";
+import useAxiosSecure from "../../../Hooks/useAxiosSecure";
+import { Link } from "react-router";
 
 const StudentDashboard = () => {
-  // Sample data
-  const {user} = useAuth();
-  const ongoingCourses = [
-    { id: 1, title: 'Advanced Algorithms', code: 'CS-401', progress: 68, instructor: 'Dr. Smith' },
-    { id: 2, title: 'Data Structures', code: 'CS-301', progress: 45, instructor: 'Prof. Johnson' },
-  ];
+  const { user } = useAuth();
+  const axiosSecure = useAxiosSecure();
 
-  const upcomingAssignments = [
-    { id: 1, course: 'Advanced Algorithms', title: 'Graph Theory Project', dueDate: 'Tomorrow', priority: 'high' },
-    { id: 2, course: 'Data Structures', title: 'Binary Trees Quiz', dueDate: 'In 3 days', priority: 'medium' },
-  ];
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const recentGrades = [
-    { id: 1, course: 'Database Systems', assignment: 'Midterm Exam', grade: 'A-', score: '90/100' },
-    { id: 2, course: 'Operating Systems', assignment: 'Project 1', grade: 'B+', score: '87/100' },
-  ];
+  // Data states
+  const [dashboardStats, setDashboardStats] = useState({});
+  const [ongoingSessions, setOngoingSessions] = useState([]);
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [recentPerformance, setRecentPerformance] = useState([]);
+  const [recentNotes, setRecentNotes] = useState([]);
+  const [studyMaterials, setStudyMaterials] = useState([]);
+
+  // Fetch all dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        // Fetch all data in parallel
+        const [
+          statsResponse,
+          ongoingResponse,
+          upcomingResponse,
+          performanceResponse,
+          notesResponse,
+          materialsResponse,
+        ] = await Promise.all([
+          axiosSecure.get("/student/dashboard-stats"),
+          axiosSecure.get("/student/ongoing-sessions"),
+          axiosSecure.get("/student/upcoming-sessions"),
+          axiosSecure.get("/student/recent-performance"),
+          axiosSecure.get("/student/recent-notes?limit=5"),
+          axiosSecure.get("/student/study-materials"),
+        ]);
+
+        setDashboardStats(statsResponse.data);
+        setOngoingSessions(ongoingResponse.data);
+        setUpcomingSessions(upcomingResponse.data);
+        setRecentPerformance(performanceResponse.data);
+        setRecentNotes(notesResponse.data);
+        setStudyMaterials(materialsResponse.data);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.email) {
+      fetchDashboardData();
+    }
+  }, [user?.email, axiosSecure]);
+
+  // Calculate average rating for performance display
+  const averageRating =
+    recentPerformance.length > 0
+      ? (
+          recentPerformance.reduce((sum, perf) => sum + perf.rating, 0) /
+          recentPerformance.length
+        ).toFixed(1)
+      : 0;
+
+  const getGradeFromRating = (rating) => {
+    if (rating >= 4.5) return "A";
+    if (rating >= 4.0) return "A-";
+    if (rating >= 3.5) return "B+";
+    if (rating >= 3.0) return "B";
+    if (rating >= 2.5) return "B-";
+    if (rating >= 2.0) return "C+";
+    return "C";
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case "high":
+        return "bg-red-100 text-red-600";
+      case "medium":
+        return "bg-yellow-100 text-yellow-600";
+      default:
+        return "bg-blue-100 text-blue-600";
+    }
+  };
+
+  const getGradeColor = (rating) => {
+    if (rating >= 4.0) return "bg-green-100 text-green-800";
+    if (rating >= 3.0) return "bg-blue-100 text-blue-800";
+    return "bg-yellow-100 text-yellow-800";
+  };
+
+  if (loading) {
+    return (
+      <div className="lg:p-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading your dashboard...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="lg:p-6 space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="lg:p-6 space-y-6">
       {/* Welcome Header */}
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold">Welcome back, {user?.displayName}</h1>
-        <p className="text-gray-600">Here's what's happening with your courses today</p>
+        <h1 className="text-2xl font-bold">
+          Welcome back, {user?.displayName}
+        </h1>
+        <p className="text-gray-600">
+          Here's your learning progress and upcoming activities
+        </p>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ongoing Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Sessions
+            </CardTitle>
             <BookOpen className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-gray-500">+2 from last semester</p>
+            <div className="text-2xl font-bold">
+              {dashboardStats.totalBookedSessions || 0}
+            </div>
+            <p className="text-xs text-gray-500">
+              {dashboardStats.ongoingSessionsCount || 0} ongoing
+            </p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Deadlines</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Upcoming Deadlines
+            </CardTitle>
             <Calendar className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">
+              {dashboardStats.upcomingDeadlines || 0}
+            </div>
             <p className="text-xs text-gray-500">Due this week</p>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Grade</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Average Rating
+            </CardTitle>
             <BarChart2 className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">B+</div>
-            <p className="text-xs text-gray-500">3.4 GPA</p>
+            <div className="text-2xl font-bold">
+              {getGradeFromRating(averageRating)}
+            </div>
+            <p className="text-xs text-gray-500">{averageRating} / 5.0</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Study Notes</CardTitle>
+            <BookmarkIcon className="h-4 w-4 text-gray-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {dashboardStats.totalNotes || 0}
+            </div>
+            <p className="text-xs text-gray-500">
+              {dashboardStats.totalReviews || 0} reviews given
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ongoing Courses */}
+        {/* Ongoing Sessions */}
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              Ongoing Courses
+              Ongoing Sessions
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {ongoingCourses.map((course) => (
-              <div key={course.id} className="space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium">{course.title}</h3>
-                    <p className="text-sm text-gray-600">{course.code} • {course.instructor}</p>
+            {ongoingSessions.length > 0 ? (
+              ongoingSessions.map((session) => (
+                <div key={session._id} className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-medium">{session.title}</h3>
+                      <p className="text-sm text-gray-600">
+                        {session.tutorName} • {session.duration} hours
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded">
+                      {session.progress}%
+                    </span>
                   </div>
-                  <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded">
-                    {course.progress}%
-                  </span>
+                  <Progress value={session.progress} className="h-2" />
                 </div>
-                <Progress value={course.progress} className="h-2" />
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No ongoing sessions
+              </p>
+            )}
           </CardContent>
           <CardFooter>
-            <Button variant="ghost" className="w-full">
-              View All Courses
-            </Button>
+            <Link to="/dashboard/booked-sessions">
+              <Button
+                variant="ghost"
+                className="w-full"
+              >
+                View All Sessions
+              </Button>
+            </Link>
           </CardFooter>
         </Card>
 
-        {/* Upcoming Assignments */}
+        {/* Upcoming Sessions */}
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              Upcoming Assignments
+              Upcoming Sessions
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {upcomingAssignments.map((assignment) => (
-              <div key={assignment.id} className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                <div className={`flex items-center justify-center h-10 w-10 rounded-full ${
-                  assignment.priority === 'high' ? 'bg-red-100 text-red-600' : 
-                  assignment.priority === 'medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-blue-100 text-blue-600'
-                }`}>
-                  <FileText className="h-5 w-5" />
+            {upcomingSessions.length > 0 ? (
+              upcomingSessions.map((session) => (
+                <div
+                  key={session._id}
+                  className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div
+                    className={`flex items-center justify-center h-10 w-10 rounded-full ${getPriorityColor(
+                      session.priority
+                    )}`}
+                  >
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">{session.title}</h3>
+                    <p className="text-sm text-gray-600">{session.tutorName}</p>
+                  </div>
+                  <div className="text-sm text-gray-500">{session.dueText}</div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-medium">{assignment.title}</h3>
-                  <p className="text-sm text-gray-600">{assignment.course}</p>
-                </div>
-                <div className="text-sm text-gray-500">{assignment.dueDate}</div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No upcoming sessions
+              </p>
+            )}
           </CardContent>
         </Card>
 
-        {/* Recent Grades */}
-        <Card className="col-span-full">
+        {/* Recent Performance */}
+        <Card className="col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Award className="h-5 w-5" />
-              Recent Grades
+              Recent Performance
             </CardTitle>
-            <CardDescription>Your most recent graded assignments</CardDescription>
+            <CardDescription>
+              Your ratings and feedback from recent sessions
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assignment</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {recentGrades.map((grade) => (
-                    <tr key={grade.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{grade.course}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{grade.assignment}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          grade.grade.startsWith('A') ? 'bg-green-100 text-green-800' :
-                          grade.grade.startsWith('B') ? 'bg-blue-100 text-blue-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {grade.grade}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{grade.score}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {recentPerformance.length > 0 ? (
+              <div className="space-y-3">
+                {recentPerformance.slice(0, 3).map((performance) => (
+                  <div
+                    key={performance.id}
+                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">
+                        {performance.sessionTitle}
+                      </h4>
+                      <p className="text-xs text-gray-600">
+                        {performance.tutorName}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${getGradeColor(
+                          performance.rating
+                        )}`}
+                      >
+                        {getGradeFromRating(performance.rating)}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {performance.rating}/5
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No performance data yet
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Notes */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookmarkIcon className="h-5 w-5" />
+              Recent Study Notes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentNotes.length > 0 ? (
+              <div className="space-y-3">
+                {recentNotes.map((note) => (
+                  <div
+                    key={note._id}
+                    className="p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <h4 className="font-medium text-sm">{note.title}</h4>
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                      {note.description || note.content}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      {new Date(note.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No notes created yet
+              </p>
+            )}
+          </CardContent>
+          <CardFooter>
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => (window.location.href = "/dashboard/create-note")}
+            >
+              View All Notes
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Study Materials Section */}
+      {studyMaterials.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Recent Study Materials
+            </CardTitle>
+            <CardDescription>
+              Materials from your enrolled sessions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {studyMaterials.slice(0, 6).map((material) => (
+                <div
+                  key={material._id}
+                  className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start gap-3">
+                    <FileText className="h-8 w-8 text-blue-500" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{material.title}</h4>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {material.sessionTitle}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {new Date(material.uploadDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  {material.link && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={() => window.open(material.link, "_blank")}
+                    >
+                      View Material
+                    </Button>
+                  )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col gap-2"
+              onClick={() => (window.location.href = "/all-sessions")}
+            >
+              <BookOpen className="h-6 w-6" />
+              <span>Browse Sessions</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col gap-2"
+              onClick={() => (window.location.href = "/dashboard/create-note")}
+            >
+              <BookmarkIcon className="h-6 w-6" />
+              <span>Create Note</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col gap-2"
+              onClick={() =>
+                (window.location.href = "/dashboard/booked-sessions")
+              }
+            >
+              <Calendar className="h-6 w-6" />
+              <span>My Sessions</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex flex-col gap-2"
+              onClick={() => (window.location.href = "/all-tutor")}
+            >
+              <Users className="h-6 w-6" />
+              <span>Find Tutors</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
