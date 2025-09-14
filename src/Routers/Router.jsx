@@ -69,9 +69,7 @@ export const router = createBrowserRouter([
       {
         path: "/session/:id",
         element: (
-          <PrivateRouters>
             <DetailedSessionPage />
-          </PrivateRouters>
         ),
       },
       {

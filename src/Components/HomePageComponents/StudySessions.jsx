@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "../../Components/ui/select";
 import { Input } from "../../Components/ui/input";
-import { Button } from "../../components/ui/button";
+import { Button } from "../../Components/ui/button";
 import { Skeleton } from "../../components/ui/skeleton";
 
 const StudySessions = () => {
