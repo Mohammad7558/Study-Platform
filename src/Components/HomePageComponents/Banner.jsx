@@ -1,5 +1,7 @@
-import React from 'react';
-import img from '../../assets/Banner.jpg';
+import React from "react";
+import img from "../../assets/Banner.jpg";
+import { Button } from "../../Components/ui/button";
+import { Link } from "react-router";
 
 const Banner = () => {
   return (
@@ -11,11 +13,13 @@ const Banner = () => {
             Empower Your Learning Journey
           </h1>
           <p className="text-gray-600 text-lg md:text-[16px] md:pr-20 lg:pr-40 md:px-0 px-6">
-            Join our Collaborative Study Platform to connect with mentors, explore resources, and grow your skills in a vibrant learning community.
+            Join our Collaborative Study Platform to connect with mentors,
+            explore resources, and grow your skills in a vibrant learning
+            community.
           </p>
-          <button className="px-6 py-3 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition duration-300 font-medium">
-            Get Started
-          </button>
+          <Link to="/all-sessions">
+            <Button variant="default" className='cursor-pointer'>Get Started</Button>
+          </Link>
         </div>
 
         {/* Right Image */}
