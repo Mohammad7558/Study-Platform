@@ -210,19 +210,19 @@ const Header = () => {
                 <Link to="/login">
                   <Button 
                     variant="ghost" 
-                    size="sm" 
+                    size="md" 
                     className="flex items-center px-4 py-2.5 hover:bg-gray-50 text-gray-700 hover:text-black rounded-xl transition-all duration-200"
                   >
-                    <LogIn className="mr-2 h-4 w-4" />
+                    <LogIn className="h-4 w-4" />
                     Sign In
                   </Button>
                 </Link>
                 <Link to="/register">
                   <Button
-                    size="sm"
+                    size="md"
                     className="flex items-center px-4 py-2.5 bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                   >
-                    <UserPlus className="mr-2 h-4 w-4" />
+                    <UserPlus className="h-4 w-4" />
                     Join Now
                   </Button>
                 </Link>
@@ -337,10 +337,10 @@ const Header = () => {
                           <Link to="/login">
                             <Button
                               variant="outline"
-                              className="w-full justify-start py-3 border-gray-200 hover:bg-gray-50 rounded-xl"
+                              className="justify-start py-3 border-gray-200 hover:bg-gray-50 rounded-xl"
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
-                              <LogIn className="mr-3 h-4 w-4" />
+                              <LogIn className="h-4 w-4" />
                               Sign In
                             </Button>
                           </Link>
@@ -348,10 +348,10 @@ const Header = () => {
                         <SheetClose asChild>
                           <Link to="/register">
                             <Button 
-                              className="w-full justify-start py-3 bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white rounded-xl shadow-lg"
+                              className="ml-3 justify-start py-3 bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white rounded-xl shadow-lg"
                               onClick={() => setIsMobileMenuOpen(false)}
                             >
-                              <UserPlus className="mr-3 h-4 w-4" />
+                              <UserPlus className="h-4 w-4" />
                               Join Now
                             </Button>
                           </Link>
