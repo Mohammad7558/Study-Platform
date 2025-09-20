@@ -141,14 +141,6 @@ const Banner = () => {
           </div>
         </div>
       </div>
-
-      {/* Custom Styles for Grid Pattern */}
-      <style jsx>{`
-        .bg-grid-pattern {
-          background-image: radial-gradient(circle, #000 1px, transparent 1px);
-          background-size: 50px 50px;
-        }
-      `}</style>
     </div>
   );
 };
